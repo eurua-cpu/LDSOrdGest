@@ -15,7 +15,7 @@ function getAll() {
         LEFT JOIN RIGHE_ORDINE r
             ON r.ordine_id = o.id
         GROUP BY o.id
-        ORDER BY o.data DESC
+        ORDER BY o.data DESC, o.id DESC
     `).all();
 }
 
@@ -35,6 +35,7 @@ function getById(id) {
             ON r.ordine_id = o.id
         WHERE o.id = ?
         GROUP BY o.id
+        ORDER BY o.data DESC
     `).get(id);
 
     if (!ordine) {

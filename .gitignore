@@ -4,3 +4,5 @@ dist/
 *.log
 backend/imports/
 backend/templates/
+/*.db-shm
+/*.db-wal

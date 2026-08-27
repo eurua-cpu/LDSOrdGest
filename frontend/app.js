@@ -39,7 +39,8 @@ function renderMetrics() {
 }
 
 function orderRow(order, compact = false) {
-  return `<tr data-id="${order.id}"><td><span class="order-number">#${String(order.id).padStart(4, '0')}</span></td><td><span class="table-link">${escapeHtml(order.cliente_nome || customerName(order.cliente_id))}</span></td><td>${escapeHtml(order.cliente_zona || '—')}</td><td>${formatDate(order.data)}</td><td><strong class="order-total-cell">${formatMoney(order.totale_ordine)}</strong></td>${compact ? `<td>${statusBadge(order.stato)}</td><td><button class="row-action" data-order-id="${order.id}" title="Apri ordine">→</button></td>` : `<td><span class="pay ${Number(order.pagato) === 1 ? 'yes' : ''}">${Number(order.pagato) === 1 ? 'Pagato' : Number(order.pagato) === 3 ? 'Parzialmente pagato' : 'Da pagare'}</span></td><td>${statusBadge(order.stato)}</td><td><button class="row-action" data-order-id="${order.id}" title="Apri ordine">→</button></td>`}</tr>`;
+  const actions = `<button class="row-action" data-order-id="${order.id}" title="Apri ordine">→</button><button class="row-action copy-action" data-copy-order-id="${order.id}" title="Copia ordine">⧉</button>`;
+  return `<tr data-id="${order.id}"><td><span class="order-number">#${String(order.id).padStart(4, '0')}</span></td><td><span class="table-link">${escapeHtml(order.cliente_nome || customerName(order.cliente_id))}</span></td><td>${escapeHtml(order.cliente_zona || '—')}</td><td>${formatDate(order.data)}</td><td><strong class="order-total-cell">${formatMoney(order.totale_ordine)}</strong></td>${compact ? `<td>${statusBadge(order.stato)}</td><td>${actions}</td>` : `<td><span class="pay ${Number(order.pagato) === 1 ? 'yes' : ''}">${Number(order.pagato) === 1 ? 'Pagato' : Number(order.pagato) === 3 ? 'Parzialmente pagato' : 'Da pagare'}</span></td><td>${statusBadge(order.stato)}</td><td>${actions}</td>`}</tr>`;
 }
 
 function renderOrders() {
@@ -81,6 +82,15 @@ function renderProducts() {
 function openDrawer(content) { $('#drawer-content').innerHTML = content; $('#drawer-backdrop').classList.remove('hidden'); }
 function closeDrawer() { $('#drawer-backdrop').classList.add('hidden'); }
 
+async function copyOrder(id) {
+  try {
+    const order = await api(`ordini/${id}`);
+    orderForm({ ...order, note_ordine: `Copia dell'ordine #${String(order.id).padStart(4, '0')}`, stato: 1, pagato: 2 }, true);
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
 function customerForm(customer = {}) {
   const editing = Boolean(customer.id);
   openDrawer(`<p class="eyebrow">ANAGRAFICA CLIENTE</p><h2>${editing ? 'Modifica cliente' : 'Nuovo cliente'}</h2><p class="drawer-subtitle">Completa i dati essenziali del contatto.</p><form id="customer-form" data-id="${customer.id || ''}"><div class="form-grid"><div class="field full"><label>Nome / Ragione sociale *</label><input name="nome" required value="${escapeHtml(customer.nome)}"></div><div class="field full"><label>Indirizzo</label><input name="indirizzo" value="${escapeHtml(customer.indirizzo)}"></div><div class="field"><label>Località</label><input name="localita" value="${escapeHtml(customer.localita)}"></div><div class="field"><label>Telefono</label><input name="telefono" value="${escapeHtml(customer.telefono)}"></div><div class="field"><label>Zona</label><input name="zona" value="${escapeHtml(customer.zona)}"></div><div class="field full"><label>Note</label><textarea name="note">${escapeHtml(customer.note)}</textarea></div></div><div class="form-actions"><button type="button" class="secondary-button" id="cancel-form">Annulla</button><button class="primary-button">${editing ? 'Salva modifiche' : 'Crea cliente'}</button></div></form>`);
@@ -97,8 +107,8 @@ function productForm(product = {}) {
   $('#cancel-form').addEventListener('click', closeDrawer);
 }
 
-function orderForm(existingOrder = null) {
-  const editing = Boolean(existingOrder?.id);
+function orderForm(existingOrder = null, copying = false) {
+  const editing = Boolean(existingOrder?.id) && !copying;
   let lines = existingOrder?.righe?.length ? existingOrder.righe.map((line) => ({ articolo_id: line.articolo_id, quantita: line.quantita, prezzo_applicato: line.prezzo_applicato, stato_riga: line.stato_riga })) : [{ articolo_id: '', quantita: 1, prezzo_applicato: 0 }];
   const productOptions = (selectedId) => state.products.map((product) => `<option value="${product.id}" ${Number(selectedId) === product.id ? 'selected' : ''}>${escapeHtml(product.codice)} · ${escapeHtml(product.descrizione || '')}</option>`).join('');
   const getTotal = () => lines.reduce((total, line) => total + (Number(line.quantita) || 0) * (Number(line.prezzo_applicato) || 0), 0);
@@ -119,5 +129,5 @@ async function loadData() { try { const [orders, customers, products] = await Pr
 
 function switchView(view) { document.querySelectorAll('.page').forEach((page) => page.classList.toggle('hidden', page.id !== `${view}-view`)); document.querySelectorAll('.nav-item').forEach((item) => item.classList.toggle('active', item.dataset.view === view)); $('#page-kicker').textContent = { overview: 'Panoramica', orders: 'Ordini', customers: 'Clienti', products: 'Articoli' }[view]; }
 
-document.addEventListener('click', (event) => { const nav = event.target.closest('[data-view]'); if (nav) switchView(nav.dataset.view); const target = event.target.closest('[data-view-target]'); if (target) switchView(target.dataset.viewTarget); if (event.target.closest('[data-action="new-order"]')) orderForm(); if (event.target.closest('[data-action="new-customer"]')) customerForm(); if (event.target.closest('[data-action="new-product"]')) productForm(); const orderButton = event.target.closest('[data-order-id]'); if (orderButton) showOrder(orderButton.dataset.orderId); const customerButton = event.target.closest('[data-customer-id]'); if (customerButton) customerForm(state.customers.find((item) => item.id === Number(customerButton.dataset.customerId))); const productButton = event.target.closest('[data-product-id]'); if (productButton) productForm(state.products.find((item) => item.id === Number(productButton.dataset.productId))); });
+document.addEventListener('click', (event) => { const nav = event.target.closest('[data-view]'); if (nav) switchView(nav.dataset.view); const target = event.target.closest('[data-view-target]'); if (target) switchView(target.dataset.viewTarget); if (event.target.closest('[data-action="new-order"]')) orderForm(); if (event.target.closest('[data-action="new-customer"]')) customerForm(); if (event.target.closest('[data-action="new-product"]')) productForm(); const orderButton = event.target.closest('[data-order-id]'); if (orderButton) showOrder(orderButton.dataset.orderId); const copyButton = event.target.closest('[data-copy-order-id]'); if (copyButton) copyOrder(copyButton.dataset.copyOrderId); const customerButton = event.target.closest('[data-customer-id]'); if (customerButton) customerForm(state.customers.find((item) => item.id === Number(customerButton.dataset.customerId))); const productButton = event.target.closest('[data-product-id]'); if (productButton) productForm(state.products.find((item) => item.id === Number(productButton.dataset.productId))); });
 $('#drawer-close').addEventListener('click', closeDrawer); $('#drawer-backdrop').addEventListener('click', (event) => { if (event.target.id === 'drawer-backdrop') closeDrawer(); }); $('#refresh-button').addEventListener('click', loadData); $('#order-search').addEventListener('input', renderOrders); $('#order-filter').addEventListener('change', renderOrders); $('#customer-search').addEventListener('input', renderCustomers); $('#product-search').addEventListener('input', renderProducts); $('#today').textContent = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }); loadData();
