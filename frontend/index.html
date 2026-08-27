@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LDS OrdGest | Console operativa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">L</span><div><strong>OrdGest</strong><small>control room</small></div></div>
+      <div class="workspace-label">GESTIONE</div>
+      <nav class="nav" aria-label="Navigazione principale">
+        <button class="nav-item active" data-view="overview"><span class="nav-icon">⌂</span>Panoramica</button>
+        <button class="nav-item" data-view="orders"><span class="nav-icon">▤</span>Ordini <b id="order-nav-count">39</b></button>
+        <button class="nav-item" data-view="customers"><span class="nav-icon">♧</span>Clienti</button>
+        <button class="nav-item" data-view="products"><span class="nav-icon">◈</span>Articoli</button>
+      </nav>
+      <div class="sidebar-footer"><span class="status-dot"></span><span>Database locale</span><small>SQLite · online</small></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>OrdGest</span><i>/</i><strong id="page-kicker">Panoramica</strong></div>
+        <div class="top-actions"><span class="today" id="today"></span><button class="icon-button" id="refresh-button" title="Aggiorna dati">↻</button><div class="avatar">ER</div></div>
+      </header>
+
+      <section class="page" id="overview-view">
+        <div class="page-heading"><div><p class="eyebrow">GIOVEDI, 27 AGOSTO 2026</p><h1>Buongiorno, Eugenio</h1><p class="subheading">Ecco il quadro operativo del tuo ordine management.</p></div><button class="primary-button" data-action="new-order"><span>＋</span> Nuovo ordine</button></div>
+        <div class="metric-grid">
+          <article class="metric-card accent-teal"><div class="metric-label">Ordini attivi <span>↗</span></div><strong id="metric-orders">—</strong><small>nel sistema</small><div class="sparkline"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></article>
+          <article class="metric-card accent-orange"><div class="metric-label">Clienti <span>↗</span></div><strong id="metric-customers">—</strong><small>anagrafica attiva</small><div class="metric-trend orange">+12% <small>vs mese scorso</small></div></article>
+          <article class="metric-card accent-blue"><div class="metric-label">Articoli <span>↗</span></div><strong id="metric-products">—</strong><small>catalogo disponibile</small><div class="metric-trend blue">+4 <small>nuovi articoli</small></div></article>
+          <article class="metric-card accent-ink"><div class="metric-label">Da evadere <span>↗</span></div><strong id="metric-pending">—</strong><small>ordini da lavorare</small><div class="progress"><span id="pending-progress"></span></div></article>
+        </div>
+        <div class="section-grid"><section class="panel recent-panel"><div class="panel-heading"><div><p class="eyebrow">ATTIVITÀ RECENTE</p><h2>Ultimi ordini</h2></div><button class="text-button" data-view-target="orders">Vedi tutti <span>→</span></button></div><div class="table-wrap"><table><thead><tr><th>Ordine</th><th>Cliente</th><th>Data</th><th>Stato</th><th></th></tr></thead><tbody id="recent-orders"></tbody></table></div></section><section class="panel quick-panel"><p class="eyebrow">ACCESSO RAPIDO</p><h2>Azioni frequenti</h2><button class="quick-action" data-action="new-order"><span class="quick-icon teal">＋</span><span><strong>Inserisci ordine</strong><small>Registra una nuova commessa</small></span><b>→</b></button><button class="quick-action" data-action="new-customer"><span class="quick-icon orange">♧</span><span><strong>Aggiungi cliente</strong><small>Nuova anagrafica cliente</small></span><b>→</b></button><button class="quick-action" data-view-target="products"><span class="quick-icon blue">◈</span><span><strong>Catalogo articoli</strong><small>Consulta disponibilità e prezzi</small></span><b>→</b></button></section></div>
+      </section>
+
+      <section class="page hidden" id="orders-view"><div class="page-heading compact"><div><p class="eyebrow">GESTIONE ORDINI</p><h1>Ordini</h1><p class="subheading">Tieni sotto controllo tutte le commesse.</p></div><button class="primary-button" data-action="new-order"><span>＋</span> Nuovo ordine</button></div><div class="toolbar"><label class="search-box"><span>⌕</span><input id="order-search" placeholder="Cerca per numero o cliente..."></label><select id="order-filter"><option value="all">Tutti gli stati</option><option value="1">Aperto</option><option value="2">In lavorazione</option><option value="3">Completato</option><option value="4">Annullato</option></select></div><section class="panel"><div class="table-wrap"><table><thead><tr><th>Numero</th><th>Cliente</th><th>Data</th><th>Pagamento</th><th>Stato</th><th></th></tr></thead><tbody id="orders-table"></tbody></table></div></section></section>
+
+      <section class="page hidden" id="customers-view"><div class="page-heading compact"><div><p class="eyebrow">ANAGRAFICA</p><h1>Clienti</h1><p class="subheading">Persone e aziende con cui lavori ogni giorno.</p></div><button class="primary-button" data-action="new-customer"><span>＋</span> Nuovo cliente</button></div><div class="toolbar"><label class="search-box"><span>⌕</span><input id="customer-search" placeholder="Cerca cliente, località o telefono..."></label></div><section class="panel"><div class="table-wrap"><table><thead><tr><th>Cliente</th><th>Località</th><th>Telefono</th><th>Zona</th><th></th></tr></thead><tbody id="customers-table"></tbody></table></div></section></section>
+
+      <section class="page hidden" id="products-view"><div class="page-heading compact"><div><p class="eyebrow">CATALOGO</p><h1>Articoli</h1><p class="subheading">Listino, unità e disponibilità a colpo d'occhio.</p></div><button class="primary-button" data-action="new-product"><span>＋</span> Nuovo articolo</button></div><div class="toolbar"><label class="search-box"><span>⌕</span><input id="product-search" placeholder="Cerca codice o descrizione..."></label></div><section class="panel"><div class="table-wrap"><table><thead><tr><th>Codice</th><th>Descrizione</th><th>Materiale</th><th>UM</th><th>Prezzo vendita</th><th></th></tr></thead><tbody id="products-table"></tbody></table></div></section></section>
+    </main>
+  </div>
+
+  <div class="drawer-backdrop hidden" id="drawer-backdrop"><aside class="drawer" role="dialog" aria-modal="true"><button class="drawer-close" id="drawer-close" title="Chiudi">×</button><div id="drawer-content"></div></aside></div>
+  <div class="toast hidden" id="toast"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "order-management-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {"dev":"tsx watch src/server.ts","build":"tsc","start":"node dist/server.js","migrate": "node scripts/migrate.js","import": "node scripts/import-csv.js"},
+  "dependencies": {"dotenv":"^16.4.7","fastify":"^5.2.1","postgres":"^3.4.5","better-sqlite3":"^13.0.3"},
+  "devDependencies": {"@types/node":"^22.13.4","tsx":"^4.19.3","typescript":"^5.7.3"}
+}
