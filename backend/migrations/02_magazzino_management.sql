@@ -1,0 +1,26 @@
+ALTER TABLE RIGHE_ORDINE
+ADD COLUMN quantita_consegnata DECIMAL(12,3) NOT NULL DEFAULT 0;
+
+ALTER TABLE MOVIMENTI
+ADD COLUMN riferimento_tipo TEXT;
+
+ALTER TABLE MOVIMENTI
+ADD COLUMN riferimento_id INTEGER;
+
+ALTER TABLE MOVIMENTI
+ADD COLUMN note TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_movimenti_articolo
+ON MOVIMENTI(articolo_id);
+
+CREATE INDEX IF NOT EXISTS idx_movimenti_data
+ON MOVIMENTI(data);
+
+CREATE INDEX IF NOT EXISTS idx_righe_ordine_articolo
+ON RIGHE_ORDINE(articolo_id);
+
+CREATE INDEX IF NOT EXISTS idx_righe_ordine_ordine
+ON RIGHE_ORDINE(ordine_id);
+
+CREATE INDEX IF NOT EXISTS idx_righe_ordine_stato
+ON RIGHE_ORDINE(stato_riga);

@@ -3,6 +3,33 @@ const service = require('../services/ordini');
 
 const router = express.Router();
 
+router.post('/righe/:id/consegna', (req, res) => {
+    try {
+        res.json(service.consegnaRiga({
+            rigaOrdineId: Number(req.params.id),
+            quantita: Number(req.body.quantita)
+        }));
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+router.post('/:id/consegna', (req, res) => {
+    try {
+        res.json(service.consegnaOrdine(Number(req.params.id)));
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+router.post('/righe/:id/annulla', (req, res) => {
+    try {
+        res.json(service.annullaRiga(Number(req.params.id)));
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
 // GET tutti gli ordini
 router.get('/', (req, res) => {
     try {

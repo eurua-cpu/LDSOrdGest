@@ -4,12 +4,17 @@ function getAll() {
     return db.prepare(`
         SELECT a.*, 
         m.descrizione AS materiale_descrizione, 
-        u.descrizione AS um_vendita_descrizione
+        m.codice AS materiale_codice,
+        u.descrizione AS um_vendita_descrizione,
+        u.codice AS um_vendita_codice,
+        ub.codice AS um_base_codice
         FROM ARTICOLI a
         JOIN MATERIALI m
             ON m.id = a.materiale
         JOIN UM u
             ON u.id = a.um_vendita
+        JOIN UM ub
+            ON ub.id = m.um_base
         ORDER BY codice
     `).all();
 }
@@ -18,12 +23,17 @@ function getById(id) {
     return db.prepare(`
         SELECT a.*, 
         m.descrizione AS materiale_descrizione, 
-        u.descrizione AS um_vendita_descrizione
+        m.codice AS materiale_codice,
+        u.descrizione AS um_vendita_descrizione,
+        u.codice AS um_vendita_codice,
+        ub.codice AS um_base_codice
         FROM ARTICOLI a
         JOIN MATERIALI m
             ON m.id = a.materiale
         JOIN UM u
             ON u.id = a.um_vendita
+        JOIN UM ub
+            ON ub.id = m.um_base
         WHERE a.id = ?
     `).get(id);
 }

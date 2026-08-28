@@ -1,28 +1,52 @@
 const { db } = require('../db');
 
 function getAll() {
-    return db.prepare(`
+    return normalizeDates(db.prepare(`
         SELECT
             m.*,
-            a.codice AS articolo_codice
+            a.codice AS articolo_codice,
+            a.descrizione AS articolo_descrizione,
+            u.codice AS unita_vendita,
+            u.descrizione AS unita_vendita_descrizione
         FROM MOVIMENTI m
         INNER JOIN ARTICOLI a
             ON a.id = m.articolo_id
+        LEFT JOIN UM u
+            ON u.id = a.um_vendita
         ORDER BY m.data DESC, m.id DESC
-    `).all();
+    `).all());
 }
 
 function getByArticolo(articoloId) {
-    return db.prepare(`
+    return normalizeDates(db.prepare(`
         SELECT
             m.*,
-            a.codice AS articolo_codice
+            a.codice AS articolo_codice,
+            a.descrizione AS articolo_descrizione,
+            u.codice AS unita_vendita,
+            u.descrizione AS unita_vendita_descrizione
         FROM MOVIMENTI m
         INNER JOIN ARTICOLI a
             ON a.id = m.articolo_id
+        LEFT JOIN UM u
+            ON u.id = a.um_vendita
         WHERE m.articolo_id = ?
         ORDER BY m.data DESC, m.id DESC
-    `).all(articoloId);
+    `).all(articoloId));
+}
+
+function normalizeDates(movimenti) {
+    return movimenti.map((movimento) => ({
+        ...movimento,
+        data: formatDate(movimento.data)
+    }));
+}
+
+function formatDate(value) {
+    const text = String(value || '');
+    if (/^\d{2}-\d{2}-\d{4}$/.test(text)) return text;
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(text);
+    return match ? `${match[3]}-${match[2]}-${match[1]}` : text;
 }
 
 function getGiacenza(articoloId) {

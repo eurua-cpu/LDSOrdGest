@@ -1,0 +1,5 @@
+ALTER TABLE MOVIMENTI
+ADD COLUMN riferimento_ordine_id INTEGER;
+
+ALTER TABLE MOVIMENTI
+ADD COLUMN riferimento_riga_id INTEGER;
