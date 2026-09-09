@@ -42,8 +42,8 @@ function renderMetrics() {
 }
 
 function orderRow(order, compact = false) {
-  const actions = `<button class="row-action" data-order-id="${order.id}" title="Apri ordine">→</button><button class="row-action copy-action" data-copy-order-id="${order.id}" title="Copia ordine">⧉</button>`;
-  return `<tr data-id="${order.id}"><td><span class="order-number">#${String(order.id).padStart(4, '0')}</span></td><td><span class="table-link">${escapeHtml(order.cliente_nome || customerName(order.cliente_id))}</span></td><td>${escapeHtml(order.cliente_zona || '—')}</td><td>${formatDate(order.data)}</td><td><strong class="order-total-cell">${formatMoney(order.totale_ordine)}</strong></td>${compact ? `<td>${statusBadge(order.stato)}</td><td>${actions}</td>` : `<td><span class="pay ${Number(order.pagato) === 1 ? 'yes' : ''}">${Number(order.pagato) === 1 ? 'Pagato' : Number(order.pagato) === 3 ? 'Parzialmente pagato' : 'Da pagare'}</span></td><td>${statusBadge(order.stato)}</td><td>${actions}</td>`}</tr>`;
+  const actions = `<span class="order-actions"><button class="row-action" data-order-id="${order.id}" title="Apri ordine" aria-label="Apri ordine">→</button><button class="row-action copy-action" data-copy-order-id="${order.id}" title="Copia ordine" aria-label="Copia ordine">⧉</button></span>`;
+  return `<tr class="order-table-row" data-id="${order.id}"><td><span class="order-number">${String(order.id).padStart(4, '0')}</span></td><td><span class="table-link">${escapeHtml(order.cliente_nome || customerName(order.cliente_id))}</span></td><td>${escapeHtml(order.cliente_zona || '—')}</td><td>${formatDate(order.data)}</td><td><strong class="order-total-cell">${formatMoney(order.totale_ordine)}</strong></td>${compact ? `<td>${statusBadge(order.stato)}</td><td>${actions}</td>` : `<td><span class="pay ${Number(order.pagato) === 1 ? 'yes' : ''}">${Number(order.pagato) === 1 ? 'Pagato' : Number(order.pagato) === 3 ? 'Parzialmente pagato' : 'Da pagare'}</span></td><td>${statusBadge(order.stato)}</td><td>${actions}</td>`}</tr>`;
 }
 
 function renderOrders() {
@@ -73,7 +73,7 @@ function renderOrders() {
 function renderCustomers() {
   const query = ($('#customer-search')?.value || '').toLowerCase();
   const rows = state.customers.filter((customer) => [customer.nome, customer.localita, customer.telefono, customer.zona].join(' ').toLowerCase().includes(query));
-  $('#customers-table').innerHTML = rows.length ? rows.map((customer) => `<tr><td><span class="table-link">${escapeHtml(customer.nome)}</span><small class="muted-cell">${escapeHtml(customer.indirizzo || '')}</small></td><td>${escapeHtml(customer.localita || '—')}</td><td>${escapeHtml(customer.telefono || '—')}</td><td>${escapeHtml(customer.zona || '—')}</td><td><button class="row-action" data-customer-id="${customer.id}" title="Modifica cliente">⋯</button></td></tr>`).join('') : '<tr><td colspan="5" class="empty">Nessun cliente trovato.</td></tr>';
+  $('#customers-table').innerHTML = rows.length ? rows.map((customer) => `<tr class="customer-table-row"><td><span class="table-link">${escapeHtml(customer.nome)}</span><small class="muted-cell">${escapeHtml(customer.indirizzo || '')}</small></td><td>${escapeHtml(customer.localita || '—')}</td><td>${escapeHtml(customer.telefono || '—')}</td><td>${escapeHtml(customer.zona || '—')}</td><td><span class="customer-actions"><button class="row-action" data-customer-id="${customer.id}" title="Modifica cliente" aria-label="Modifica cliente">✎</button><button class="row-action copy-action" data-copy-customer-id="${customer.id}" title="Copia cliente" aria-label="Copia cliente">⧉</button></span></td></tr>`).join('') : '<tr><td colspan="5" class="empty">Nessun cliente trovato.</td></tr>';
 }
 
 function renderProducts() {
@@ -87,14 +87,14 @@ function formatMovementDate(value) { const text = String(value || ''); if (/^\d{
 function renderWarehouse() {
   const articles = state.warehouse.articles || [];
   const materials = state.warehouse.materials || [];
-  $('#warehouse-articles').innerHTML = articles.map((item) => `<tr><td><span class="order-number">${escapeHtml(item.codice)}</span></td><td>${escapeHtml(item.descrizione || '—')}</td><td>${escapeHtml(item.unita_vendita_descrizione || item.unita_vendita || '—')}</td><td>${stockValue(item.giacenza_fisica)}</td><td>${stockValue(item.stock_impegnato)}</td><td><strong class="stock-${Number(item.stock_disponibile) < 0 ? 'negative' : 'positive'}">${stockValue(item.stock_disponibile)}</strong></td></tr>`).join('') || '<tr><td colspan="6" class="empty">Nessun articolo disponibile.</td></tr>';
-  $('#warehouse-materials').innerHTML = materials.map((item) => `<tr><td><span class="order-number">${escapeHtml(item.materiale_codice)}</span></td><td>${escapeHtml(item.materiale_descrizione || '—')}</td><td>${escapeHtml(item.unita_base_descrizione || item.unita_base || '—')}</td><td>${stockValue(item.giacenza_fisica)}</td><td>${stockValue(item.stock_impegnato)}</td><td><strong class="stock-${Number(item.stock_disponibile) < 0 ? 'negative' : 'positive'}">${stockValue(item.stock_disponibile)}</strong></td></tr>`).join('') || '<tr><td colspan="6" class="empty">Nessun materiale disponibile.</td></tr>';
+  $('#warehouse-articles').innerHTML = articles.map((item) => `<tr class="warehouse-table-row"><td><span class="order-number">${escapeHtml(item.codice)}</span></td><td>${escapeHtml(item.descrizione || '—')}</td><td>${escapeHtml(item.unita_vendita_descrizione || item.unita_vendita || '—')}</td><td>${stockValue(item.giacenza_fisica)}</td><td>${stockValue(item.stock_impegnato)}</td><td><strong class="stock-${Number(item.stock_disponibile) < 0 ? 'negative' : 'positive'}">${stockValue(item.stock_disponibile)}</strong></td></tr>`).join('') || '<tr><td colspan="6" class="empty">Nessun articolo disponibile.</td></tr>';
+  $('#warehouse-materials').innerHTML = materials.map((item) => `<tr class="warehouse-table-row"><td><span class="order-number">${escapeHtml(item.materiale_codice)}</span></td><td>${escapeHtml(item.materiale_descrizione || '—')}</td><td>${escapeHtml(item.unita_base_descrizione || item.unita_base || '—')}</td><td>${stockValue(item.giacenza_fisica)}</td><td>${stockValue(item.stock_impegnato)}</td><td><strong class="stock-${Number(item.stock_disponibile) < 0 ? 'negative' : 'positive'}">${stockValue(item.stock_disponibile)}</strong></td></tr>`).join('') || '<tr><td colspan="6" class="empty">Nessun materiale disponibile.</td></tr>';
 }
 
 function renderMovements() {
   const query = ($('#movement-filter')?.value || '').toLowerCase();
   const movements = (state.warehouse.movements || []).filter((item) => `${item.articolo_codice} ${item.articolo_descrizione || ''} ${item.tipo}`.toLowerCase().includes(query));
-  $('#warehouse-movements').innerHTML = movements.map((item) => `<tr><td>${formatMovementDate(item.data)}</td><td><strong>${escapeHtml(item.articolo_codice)}</strong><small class="muted-cell">${escapeHtml(item.articolo_descrizione || '')}</small></td><td>${escapeHtml(item.unita_vendita_descrizione || item.unita_vendita || '—')}</td><td><span class="movement-type ${String(item.tipo).toLowerCase()}">${escapeHtml(item.tipo)}</span></td><td class="movement-quantity ${Number(item.quantita) < 0 ? 'negative' : 'positive'}">${stockValue(item.quantita)}</td><td>${item.riferimento_ordine_id || item.riferimento_id || '—'}</td><td>${item.riferimento_riga_id || '—'}</td><td>${escapeHtml(item.note || '—')}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">Nessun movimento trovato.</td></tr>';
+  $('#warehouse-movements').innerHTML = movements.map((item) => `<tr class="movement-table-row"><td>${formatMovementDate(item.data)}</td><td><strong>${escapeHtml(item.articolo_codice)}</strong><small class="muted-cell">${escapeHtml(item.articolo_descrizione || '')}</small></td><td>${escapeHtml(item.unita_vendita_descrizione || item.unita_vendita || '—')}</td><td><span class="movement-type ${String(item.tipo).toLowerCase()}">${escapeHtml(item.tipo)}</span></td><td class="movement-quantity ${Number(item.quantita) < 0 ? 'negative' : 'positive'}">${stockValue(item.quantita)}</td><td>${item.riferimento_ordine_id || item.riferimento_id || '—'}</td><td>${item.riferimento_riga_id || '—'}</td><td>${escapeHtml(item.note || '—')}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">Nessun movimento trovato.</td></tr>';
 }
 
 document.addEventListener('click', (event) => {
@@ -112,7 +112,23 @@ document.addEventListener('input', (event) => {
   if (event.target.id === 'movement-filter') renderMovements();
 });
 
-function openDrawer(content) { $('#drawer-content').innerHTML = content; $('#drawer-backdrop').classList.remove('hidden'); }
+function closeMobileMenu() {
+  $('.sidebar').classList.remove('mobile-open');
+  $('#mobile-nav-backdrop').classList.add('hidden');
+  $('#menu-toggle').setAttribute('aria-expanded', 'false');
+}
+
+$('#menu-toggle').addEventListener('click', () => {
+  const isOpen = $('.sidebar').classList.toggle('mobile-open');
+  $('#mobile-nav-backdrop').classList.toggle('hidden', !isOpen);
+  $('#menu-toggle').setAttribute('aria-expanded', String(isOpen));
+});
+$('#mobile-nav-backdrop').addEventListener('click', closeMobileMenu);
+document.addEventListener('click', (event) => {
+  if (event.target.closest('[data-view]')) closeMobileMenu();
+});
+
+function openDrawer(content) { $('#drawer-content').innerHTML = content.replace(/(ORDINE|Ordine) #(\d+)/g, '$1 $2'); $('#drawer-backdrop').classList.remove('hidden'); }
 function closeDrawer() { $('#drawer-backdrop').classList.add('hidden'); }
 
 function movementForm() {
@@ -141,10 +157,15 @@ async function copyOrder(id) {
       stato_riga: 1,
       data_consegna: null
     }));
-    orderForm({ ...order, righe: copiedLines, note_ordine: `Copia dell'ordine #${String(order.id).padStart(4, '0')}`, stato: 1, pagato: 2 }, true);
+    orderForm({ ...order, righe: copiedLines, note_ordine: `Copia dell'ordine ${String(order.id).padStart(4, '0')}`, stato: 1, pagato: 2 }, true);
   } catch (error) {
     showToast(error.message, true);
   }
+}
+
+function copyCustomer(id) {
+  const customer = state.customers.find((item) => item.id === Number(id));
+  if (customer) customerForm({ ...customer, id: undefined, nome: `${customer.nome} (copia)` });
 }
 
 function customerForm(customer = {}) {
@@ -186,5 +207,5 @@ async function loadData() { try { const [orders, customers, products] = await Pr
 
 function switchView(view) { document.querySelectorAll('.page').forEach((page) => page.classList.toggle('hidden', page.id !== `${view}-view`)); document.querySelectorAll('.nav-item').forEach((item) => item.classList.toggle('active', item.dataset.view === view)); $('#page-kicker').textContent = { overview: 'Panoramica', orders: 'Ordini', customers: 'Clienti', products: 'Articoli', warehouse: 'Magazzino' }[view]; if (view === 'warehouse') loadWarehouse().catch((error) => showToast(error.message, true)); }
 
-document.addEventListener('click', (event) => { const nav = event.target.closest('[data-view]'); if (nav) switchView(nav.dataset.view); const target = event.target.closest('[data-view-target]'); if (target) switchView(target.dataset.viewTarget); if (event.target.closest('[data-action="new-order"]')) orderForm(); if (event.target.closest('[data-action="new-customer"]')) customerForm(); if (event.target.closest('[data-action="new-product"]')) productForm(); if (event.target.closest('[data-action="new-material"]')) materialForm(); if (event.target.closest('[data-action="new-movement"]')) movementForm(); const orderButton = event.target.closest('[data-order-id]'); if (orderButton) showOrder(orderButton.dataset.orderId); const copyButton = event.target.closest('[data-copy-order-id]'); if (copyButton) copyOrder(copyButton.dataset.copyOrderId); const customerButton = event.target.closest('[data-customer-id]'); if (customerButton) customerForm(state.customers.find((item) => item.id === Number(customerButton.dataset.customerId))); const productButton = event.target.closest('[data-product-id]'); if (productButton) productForm(state.products.find((item) => item.id === Number(productButton.dataset.productId))); });
+document.addEventListener('click', (event) => { const nav = event.target.closest('[data-view]'); if (nav) switchView(nav.dataset.view); const target = event.target.closest('[data-view-target]'); if (target) switchView(target.dataset.viewTarget); if (event.target.closest('[data-action="new-order"]')) orderForm(); if (event.target.closest('[data-action="new-customer"]')) customerForm(); if (event.target.closest('[data-action="new-product"]')) productForm(); if (event.target.closest('[data-action="new-material"]')) materialForm(); if (event.target.closest('[data-action="new-movement"]')) movementForm(); const orderButton = event.target.closest('[data-order-id]'); if (orderButton) showOrder(orderButton.dataset.orderId); const copyButton = event.target.closest('[data-copy-order-id]'); if (copyButton) copyOrder(copyButton.dataset.copyOrderId); const customerButton = event.target.closest('[data-customer-id]'); if (customerButton) customerForm(state.customers.find((item) => item.id === Number(customerButton.dataset.customerId))); const customerCopyButton = event.target.closest('[data-copy-customer-id]'); if (customerCopyButton) copyCustomer(customerCopyButton.dataset.copyCustomerId); const productButton = event.target.closest('[data-product-id]'); if (productButton) productForm(state.products.find((item) => item.id === Number(productButton.dataset.productId))); });
 $('#drawer-close').addEventListener('click', closeDrawer); $('#drawer-backdrop').addEventListener('click', (event) => { if (event.target.id === 'drawer-backdrop') closeDrawer(); }); $('#refresh-button').addEventListener('click', loadData); $('#warehouse-refresh').addEventListener('click', () => loadWarehouse().catch((error) => showToast(error.message, true))); $('#order-search').addEventListener('input', renderOrders); $('#order-filter').addEventListener('change', renderOrders); $('#customer-search').addEventListener('input', renderCustomers); $('#product-search').addEventListener('input', renderProducts); $('#today').textContent = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }); loadData();
