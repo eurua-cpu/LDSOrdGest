@@ -16,11 +16,11 @@ const router = express.Router();
 | - stock disponibile
 |
 */
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
 
     try {
 
-        const stock = magazzino.getStock();
+        const stock = await magazzino.getStock();
 
         res.json(stock);
 
@@ -37,9 +37,9 @@ router.get('/', (req, res) => {
     }
 });
 
-router.get('/materiali', (req, res) => {
+router.get('/materiali', async (req, res) => {
     try {
-        res.json(magazzino.getStockMateriali());
+        res.json(await magazzino.getStockMateriali());
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -53,7 +53,7 @@ router.get('/materiali', (req, res) => {
 | Situazione completa di un articolo
 |
 */
-router.get('/articoli/:id', (req, res) => {
+router.get('/articoli/:id', async (req, res) => {
 
     try {
 
@@ -67,7 +67,7 @@ router.get('/articoli/:id', (req, res) => {
             });
         }
 
-        const stock =
+        const stock = await
             magazzino.getStockArticolo(
                 articoloId
             );
@@ -97,7 +97,7 @@ router.get('/articoli/:id', (req, res) => {
 */
 router.get(
     '/articoli/:id/giacenza',
-    (req, res) => {
+    async (req, res) => {
 
         try {
 
@@ -111,7 +111,7 @@ router.get(
                 });
             }
 
-            const giacenza =
+            const giacenza = await
                 magazzino.getGiacenzaFisica(
                     articoloId
                 );
@@ -140,7 +140,7 @@ router.get(
 */
 router.get(
     '/articoli/:id/impegnato',
-    (req, res) => {
+    async (req, res) => {
 
         try {
 
@@ -154,7 +154,7 @@ router.get(
                 });
             }
 
-            const impegnato =
+            const impegnato = await
                 magazzino.getStockImpegnato(
                     articoloId
                 );
@@ -186,7 +186,7 @@ router.get(
 */
 router.get(
     '/articoli/:id/disponibile',
-    (req, res) => {
+    async (req, res) => {
 
         try {
 
@@ -200,7 +200,7 @@ router.get(
                 });
             }
 
-            const disponibile =
+            const disponibile = await
                 magazzino.getStockDisponibile(
                     articoloId
                 );
@@ -229,7 +229,7 @@ router.get(
 */
 router.get(
     '/articoli/:id/movimenti',
-    (req, res) => {
+    async (req, res) => {
 
         try {
 
@@ -243,7 +243,7 @@ router.get(
                 });
             }
 
-            const movimenti =
+            const movimenti = await
                 magazzino.getMovimenti(
                     articoloId
                 );
@@ -280,7 +280,7 @@ router.get(
 | }
 |
 */
-router.post('/carichi', (req, res) => {
+router.post('/carichi', async (req, res) => {
 
     try {
 
@@ -295,7 +295,7 @@ router.post('/carichi', (req, res) => {
 
 
         const movimento =
-            magazzino.carico({
+            await magazzino.carico({
 
                 articoloId:
                     Number(articoloId),
@@ -346,7 +346,7 @@ router.post('/carichi', (req, res) => {
 | }
 |
 */
-router.post('/scarichi', (req, res) => {
+router.post('/scarichi', async (req, res) => {
 
     try {
 
@@ -361,7 +361,7 @@ router.post('/scarichi', (req, res) => {
 
 
         const movimento =
-            magazzino.scarico({
+            await magazzino.scarico({
 
                 articoloId:
                     Number(articoloId),
@@ -418,7 +418,7 @@ router.post('/scarichi', (req, res) => {
 | }
 |
 */
-router.post('/rettifiche', (req, res) => {
+router.post('/rettifiche', async (req, res) => {
 
     try {
 
@@ -430,7 +430,7 @@ router.post('/rettifiche', (req, res) => {
 
 
         const movimento =
-            magazzino.rettifica({
+            await magazzino.rettifica({
 
                 articoloId:
                     Number(articoloId),
@@ -478,7 +478,7 @@ router.post('/rettifiche', (req, res) => {
 | }
 |
 */
-router.post('/resi', (req, res) => {
+router.post('/resi', async (req, res) => {
 
     try {
 
@@ -491,7 +491,7 @@ router.post('/resi', (req, res) => {
 
 
         const movimento =
-            magazzino.resoCliente({
+            await magazzino.resoCliente({
 
                 articoloId:
                     Number(articoloId),

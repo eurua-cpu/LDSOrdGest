@@ -3,9 +3,9 @@ const service = require('../services/ordini');
 
 const router = express.Router();
 
-router.post('/righe/:id/consegna', (req, res) => {
+router.post('/righe/:id/consegna', async (req, res) => {
     try {
-        res.json(service.consegnaRiga({
+        res.json(await service.consegnaRiga({
             rigaOrdineId: Number(req.params.id),
             quantita: Number(req.body.quantita)
         }));
@@ -14,26 +14,26 @@ router.post('/righe/:id/consegna', (req, res) => {
     }
 });
 
-router.post('/:id/consegna', (req, res) => {
+router.post('/:id/consegna', async (req, res) => {
     try {
-        res.json(service.consegnaOrdine(Number(req.params.id)));
+        res.json(await service.consegnaOrdine(Number(req.params.id)));
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 });
 
-router.post('/righe/:id/annulla', (req, res) => {
+router.post('/righe/:id/annulla', async (req, res) => {
     try {
-        res.json(service.annullaRiga(Number(req.params.id)));
+        res.json(await service.annullaRiga(Number(req.params.id)));
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 });
 
 // GET tutti gli ordini
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        res.json(service.getAll());
+        res.json(await service.getAll());
     } catch (error) {
         res.status(500).json({
             error: error.message
@@ -42,9 +42,9 @@ router.get('/', (req, res) => {
 });
 
 // GET ordine completo con righe
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
-        const ordine = service.getById(req.params.id);
+        const ordine = await service.getById(req.params.id);
 
         if (!ordine) {
             return res.status(404).json({
@@ -62,7 +62,7 @@ router.get('/:id', (req, res) => {
 });
 
 // POST ordine + righe
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
 
         if (!req.body.cliente_id) {
@@ -77,7 +77,7 @@ router.post('/', (req, res) => {
             });
         }
 
-        const ordine = service.create(req.body);
+        const ordine = await service.create(req.body);
 
         res.status(201).json(ordine);
 
@@ -89,9 +89,9 @@ router.post('/', (req, res) => {
 });
 
 // PUT ordine
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
-        const ordine = service.update(
+        const ordine = await service.update(
             req.params.id,
             req.body
         );
@@ -112,9 +112,9 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE ordine
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
-        const deleted = service.remove(req.params.id);
+        const deleted = await service.remove(req.params.id);
 
         if (!deleted) {
             return res.status(404).json({

@@ -1,33 +1,33 @@
 const { db } = require('../db');
 const magazzino = require('./magazzino');
 
-function getAll() {
+async function getAll() {
     return db.prepare(`
         SELECT
             o.*,
-            c.nome AS cliente_nome,
-            c.indirizzo AS cliente_indirizzo,
-            c.localita AS cliente_localita,
-            c.zona AS cliente_zona,
+            MAX(c.nome) AS cliente_nome,
+            MAX(c.indirizzo) AS cliente_indirizzo,
+            MAX(c.localita) AS cliente_localita,
+            MAX(c.zona) AS cliente_zona,
             COALESCE(SUM(r.quantita * r.prezzo_applicato), 0) AS totale_ordine
         FROM ORDINI o
         INNER JOIN CLIENTI c
             ON c.id = o.cliente_id
         LEFT JOIN RIGHE_ORDINE r
             ON r.ordine_id = o.id
-        GROUP BY o.id
+        GROUP BY o.id, c.nome, c.indirizzo, c.localita, c.zona
         ORDER BY o.data DESC, o.id DESC
     `).all();
 }
 
-function getById(id) {
-    const ordine = db.prepare(`
-        SELECT
+async function getById(id) {
+    const ordine = await db.prepare(`
+            SELECT
             o.*,
-            c.nome AS cliente_nome,
-            c.indirizzo AS cliente_indirizzo,
-            c.localita AS cliente_localita,
-            c.zona AS cliente_zona,
+            MAX(c.nome) AS cliente_nome,
+            MAX(c.indirizzo) AS cliente_indirizzo,
+            MAX(c.localita) AS cliente_localita,
+            MAX(c.zona) AS cliente_zona,
             COALESCE(SUM(r.quantita * r.prezzo_applicato), 0) AS totale_ordine
         FROM ORDINI o
         INNER JOIN CLIENTI c
@@ -35,7 +35,7 @@ function getById(id) {
         LEFT JOIN RIGHE_ORDINE r
             ON r.ordine_id = o.id
         WHERE o.id = ?
-        GROUP BY o.id
+        GROUP BY o.id, c.nome, c.indirizzo, c.localita, c.zona
         ORDER BY o.data DESC
     `).get(id);
 
@@ -43,7 +43,7 @@ function getById(id) {
         return null;
     }
 
-    ordine.righe = db.prepare(`
+    ordine.righe = await db.prepare(`
         SELECT
             r.*,
             a.codice AS articolo_codice,
@@ -63,12 +63,12 @@ function getById(id) {
     return ordine;
 }
 
-function create(data) {
+async function create(data) {
 
-    const createOrder = db.transaction((ordine) => {
+    const createOrder = db.transaction(async (ordine) => {
 
         // Verifica cliente
-        const cliente = db.prepare(`
+        const cliente = await db.prepare(`
             SELECT id
             FROM CLIENTI
             WHERE id = ?
@@ -89,7 +89,7 @@ function create(data) {
 
         for (const riga of data.righe) {
 
-            const articolo = db.prepare(`
+            const articolo = await db.prepare(`
                 SELECT
                     id,
                     codice,
@@ -120,13 +120,13 @@ function create(data) {
             }
 
             if (ordine.stato !== 2) {
-                magazzino.verificaDisponibilita(articolo.id, quantita);
+                await magazzino.verificaDisponibilita(articolo.id, quantita);
             }
         }
 
 
         // Crea ordine
-        const orderResult = db.prepare(`
+        const orderResult = await db.prepare(`
             INSERT INTO ORDINI (
                 data,
                 cliente_id,
@@ -174,7 +174,7 @@ function create(data) {
                 );
             }*/
 
-            insertRiga.run(
+            await insertRiga.run(
                 ordineId,
                 riga.articolo_id,
                 riga.quantita,
@@ -187,15 +187,15 @@ function create(data) {
         return ordineId;
     });
 
-    const id = createOrder(data);
+    const id = await createOrder(data);
 
     return getById(id);
 }
 
-function update(id, data) {
-    const updateOrder = db.transaction((ordineId) => {
+async function update(id, data) {
+    const updateOrder = db.transaction(async (ordineId) => {
         const requestedStatus = Number(data.stato);
-        const existing = db.prepare(`
+        const existing = await db.prepare(`
             SELECT id
             FROM ORDINI
             WHERE id = ?
@@ -205,7 +205,7 @@ function update(id, data) {
             return false;
         }
 
-        const customer = db.prepare(`
+        const customer = await db.prepare(`
             SELECT id
             FROM CLIENTI
             WHERE id = ?
@@ -226,7 +226,7 @@ function update(id, data) {
 
         for (const riga of data.righe ?? []) {
 
-            const articolo = db.prepare(`
+            const articolo = await db.prepare(`
                 SELECT
                     id,
                     codice,
@@ -261,12 +261,12 @@ function update(id, data) {
                 ? 0
                 : Math.max(0, quantita - Number(riga.quantita_consegnata ?? 0));
             if (quantitaDaImpegnare > 0) {
-                magazzino.verificaDisponibilita(articolo.id, quantitaDaImpegnare, ordineId);
+                await magazzino.verificaDisponibilita(articolo.id, quantitaDaImpegnare, ordineId);
             }
         }
 
 
-        db.prepare(`
+        await db.prepare(`
             UPDATE ORDINI
             SET
                 data = ?,
@@ -287,13 +287,13 @@ function update(id, data) {
         );
 
         if (Array.isArray(data.righe)) {
-            const existingLines = db.prepare(`
+            const existingLines = await db.prepare(`
                 SELECT articolo_id, quantita_consegnata
                 FROM RIGHE_ORDINE
                 WHERE ordine_id = ?
             `).all(ordineId);
 
-            db.prepare(`
+            await db.prepare(`
                 DELETE FROM RIGHE_ORDINE
                 WHERE ordine_id = ?
             `).run(ordineId);
@@ -311,7 +311,7 @@ function update(id, data) {
             `);
 
             for (const line of data.righe) {
-                const article = db.prepare(`
+                const article = await db.prepare(`
                     SELECT id
                     FROM ARTICOLI
                     WHERE id = ?
@@ -339,12 +339,12 @@ function update(id, data) {
                     .reduce((total, oldLine) => total + Number(oldLine.quantita_consegnata || 0), 0);
                 const deliveryDelta = quantitaConsegnata - previousDelivered;
                 if (deliveryDelta > 0) {
-                    magazzino.vendita({ articoloId: line.articolo_id, quantita: deliveryDelta, ordineId, rigaOrdineId: line.id, note: `Consegna ordine "${ordineId}" riga "${line.id}"` });
+                    await magazzino.vendita({ articoloId: line.articolo_id, quantita: deliveryDelta, ordineId, rigaOrdineId: line.id, note: `Consegna ordine "${ordineId}" riga "${line.id}"` });
                 } else if (deliveryDelta < 0) {
-                    magazzino.resoCliente({ articoloId: line.articolo_id, quantita: -deliveryDelta, ordineId, rigaOrdineId: line.id, note: `Rettifica consegna ordine "${ordineId}" riga "${line.id}"` });
+                    await magazzino.resoCliente({ articoloId: line.articolo_id, quantita: -deliveryDelta, ordineId, rigaOrdineId: line.id, note: `Rettifica consegna ordine "${ordineId}" riga "${line.id}"` });
                 }
 
-                insertLine.run(
+                await insertLine.run(
                     ordineId,
                     line.articolo_id,
                     line.quantita,
@@ -356,13 +356,13 @@ function update(id, data) {
         }
 
         if (requestedStatus === 2) {
-            db.prepare(`
+            await db.prepare(`
                 UPDATE RIGHE_ORDINE
                 SET stato_riga = 2
                 WHERE ordine_id = ?
             `).run(ordineId);
         } else if (requestedStatus === 1) {
-            const lineStatus = db.prepare(`
+            const lineStatus = await db.prepare(`
                 SELECT
                     COUNT(*) AS totale_righe,
                     SUM(CASE WHEN stato_riga = 2 THEN 1 ELSE 0 END) AS righe_consegnate
@@ -372,7 +372,7 @@ function update(id, data) {
 
             if (lineStatus.totale_righe > 0 && lineStatus.righe_consegnate > 0) {
                 const derivedStatus = lineStatus.righe_consegnate === lineStatus.totale_righe ? 2 : 4;
-                db.prepare(`
+                await db.prepare(`
                     UPDATE ORDINI
                     SET stato = ?
                     WHERE id = ?
@@ -383,23 +383,23 @@ function update(id, data) {
         return true;
     });
 
-    if (!updateOrder(id)) {
+    if (!(await updateOrder(id))) {
         return null;
     }
 
     return getById(id);
 }
 
-function remove(id) {
+async function remove(id) {
 
-    const deleteOrder = db.transaction(() => {
+    const deleteOrder = db.transaction(async () => {
 
-        db.prepare(`
+        await db.prepare(`
             DELETE FROM RIGHE_ORDINE
             WHERE ordine_id = ?
         `).run(id);
 
-        const result = db.prepare(`
+        const result = await db.prepare(`
             DELETE FROM ORDINI
             WHERE id = ?
         `).run(id);
@@ -430,7 +430,7 @@ function remove(id) {
  *
  * MOVIMENTO = -30
  */
-function consegnaRiga({
+async function consegnaRiga({
     rigaOrdineId,
     quantita
 }) {
@@ -447,7 +447,7 @@ function consegnaRiga({
     }
 
 
-    const transaction = db.transaction(() => {
+    const transaction = db.transaction(async () => {
 
         /*
          * ------------------------------------------------------
@@ -455,7 +455,7 @@ function consegnaRiga({
          * ------------------------------------------------------
          */
 
-        const riga = db.prepare(`
+        const riga = await db.prepare(`
             SELECT
                 r.id,
                 r.ordine_id,
@@ -532,7 +532,7 @@ function consegnaRiga({
          */
 
         const fisico =
-            magazzino.getGiacenzaFisica(
+            await magazzino.getGiacenzaFisica(
                 riga.articolo_id
             );
 
@@ -554,7 +554,7 @@ function consegnaRiga({
          * ------------------------------------------------------
          */
 
-        magazzino.vendita({
+        await magazzino.vendita({
 
             articoloId:
                 riga.articolo_id,
@@ -580,7 +580,7 @@ function consegnaRiga({
             qta;
 
 
-        db.prepare(`
+        await db.prepare(`
             UPDATE RIGHE_ORDINE
 
             SET quantita_consegnata = ?
@@ -607,7 +607,7 @@ function consegnaRiga({
             Number(riga.quantita)
         ) {
 
-            nuovoStato = db.prepare(`
+            nuovoStato = await db.prepare(`
                 SELECT id
                 FROM STATUS_RIGA_ORDINE
                 WHERE id = 2
@@ -615,7 +615,7 @@ function consegnaRiga({
 
         } else {
 
-            nuovoStato = db.prepare(`
+            nuovoStato = await db.prepare(`
                 SELECT id
                 FROM STATUS_RIGA_ORDINE
                 WHERE id = 4
@@ -625,7 +625,7 @@ function consegnaRiga({
 
         if (nuovoStato) {
 
-            db.prepare(`
+            await db.prepare(`
                 UPDATE RIGHE_ORDINE
 
                 SET stato_riga = ?
@@ -637,7 +637,7 @@ function consegnaRiga({
             );
         }
 
-        const statoOrdine = db.prepare(`
+        const statoOrdine = await db.prepare(`
             SELECT
                 COUNT(*) AS totale_righe,
                 SUM(CASE WHEN stato_riga = 2 THEN 1 ELSE 0 END) AS righe_consegnate
@@ -645,9 +645,9 @@ function consegnaRiga({
             WHERE ordine_id = ?
         `).get(riga.ordine_id);
         if (statoOrdine.totale_righe > 0 && statoOrdine.righe_consegnate === statoOrdine.totale_righe) {
-            db.prepare('UPDATE ORDINI SET stato = 2 WHERE id = ?').run(riga.ordine_id);
+            await db.prepare('UPDATE ORDINI SET stato = 2 WHERE id = ?').run(riga.ordine_id);
         } else if (statoOrdine.righe_consegnate > 0) {
-            db.prepare('UPDATE ORDINI SET stato = 4 WHERE id = ?').run(riga.ordine_id);
+            await db.prepare('UPDATE ORDINI SET stato = 4 WHERE id = ?').run(riga.ordine_id);
         }
 
 
@@ -663,7 +663,7 @@ function consegnaRiga({
             quantita_residua:
                 Number(riga.quantita)
                 -
-                novaQuantitaConsegnata
+                nuovaQuantitaConsegnata
         };
     });
 
@@ -679,11 +679,11 @@ function consegnaRiga({
  *
  * Consegna tutte le quantità ancora mancanti.
  */
-function consegnaOrdine(ordineId) {
+async function consegnaOrdine(ordineId) {
 
-    const transaction = db.transaction(() => {
+    const transaction = db.transaction(async () => {
 
-        const righe = db.prepare(`
+        const righe = await db.prepare(`
             SELECT
                 id,
                 articolo_id,
@@ -723,7 +723,7 @@ function consegnaOrdine(ordineId) {
 
 
             const fisico =
-                magazzino.getGiacenzaFisica(
+                await magazzino.getGiacenzaFisica(
                     riga.articolo_id
                 );
 
@@ -752,7 +752,7 @@ function consegnaOrdine(ordineId) {
                 Number(riga.quantita_consegnata);
 
 
-            magazzino.vendita({
+            await magazzino.vendita({
 
                 articoloId:
                     riga.articolo_id,
@@ -765,7 +765,7 @@ function consegnaOrdine(ordineId) {
             });
 
 
-            db.prepare(`
+            await db.prepare(`
                 UPDATE RIGHE_ORDINE
 
                 SET quantita_consegnata = quantita
@@ -786,7 +786,7 @@ function consegnaOrdine(ordineId) {
          * Tutte le righe sono state consegnate.
          */
 
-        const stato = db.prepare(`
+        const stato = await db.prepare(`
             SELECT id
             FROM STATUS_RIGA_ORDINE
             WHERE id = 2
@@ -795,7 +795,7 @@ function consegnaOrdine(ordineId) {
 
         if (stato) {
 
-            db.prepare(`
+            await db.prepare(`
                 UPDATE RIGHE_ORDINE
 
                 SET stato_riga = ?
@@ -809,7 +809,7 @@ function consegnaOrdine(ordineId) {
             );
         }
 
-        db.prepare('UPDATE ORDINI SET stato = 2 WHERE id = ?').run(ordineId);
+        await db.prepare('UPDATE ORDINI SET stato = 2 WHERE id = ?').run(ordineId);
 
 
         return risultati;
@@ -830,9 +830,9 @@ function consegnaOrdine(ordineId) {
  *
  * Non viene creato nessun movimento.
  */
-function annullaRiga(rigaOrdineId) {
+async function annullaRiga(rigaOrdineId) {
 
-    const riga = db.prepare(`
+    const riga = await db.prepare(`
         SELECT
             r.id,
             r.quantita,
@@ -850,7 +850,7 @@ function annullaRiga(rigaOrdineId) {
     }
 
 
-    const stato = db.prepare(`
+    const stato = await db.prepare(`
         SELECT id
         FROM STATUS_RIGA_ORDINE
         WHERE id = 3
@@ -864,7 +864,7 @@ function annullaRiga(rigaOrdineId) {
     }
 
 
-    db.prepare(`
+    await db.prepare(`
         UPDATE RIGHE_ORDINE
 
         SET stato_riga = ?
@@ -875,7 +875,7 @@ function annullaRiga(rigaOrdineId) {
         rigaOrdineId
     );
 
-    db.prepare(`
+    await db.prepare(`
         UPDATE ORDINI
         SET stato = CASE
             WHEN EXISTS (SELECT 1 FROM RIGHE_ORDINE WHERE ordine_id = (SELECT ordine_id FROM RIGHE_ORDINE WHERE id = ?) AND stato_riga = 2)

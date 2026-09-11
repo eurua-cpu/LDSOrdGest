@@ -3,9 +3,9 @@ const service = require('../services/articoli');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        res.json(service.getAll());
+        res.json(await service.getAll());
     } catch (error) {
         res.status(500).json({
             error: error.message
@@ -13,9 +13,9 @@ router.get('/', (req, res) => {
     }
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
-        const articolo = service.getById(req.params.id);
+        const articolo = await service.getById(req.params.id);
 
         if (!articolo) {
             return res.status(404).json({
@@ -31,9 +31,9 @@ router.get('/:id', (req, res) => {
     }
 });
 
-router.get('/:id/giacenza', (req, res) => {
+router.get('/:id/giacenza', async (req, res) => {
     try {
-        const articolo = service.getById(req.params.id);
+        const articolo = await service.getById(req.params.id);
 
         if (!articolo) {
             return res.status(404).json({
@@ -43,7 +43,7 @@ router.get('/:id/giacenza', (req, res) => {
 
         res.json({
             articolo_id: Number(req.params.id),
-            giacenza: service.getGiacenza(req.params.id)
+            giacenza: await service.getGiacenza(req.params.id)
         });
 
     } catch (error) {
@@ -53,7 +53,7 @@ router.get('/:id/giacenza', (req, res) => {
     }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
         if (!req.body.codice) {
             return res.status(400).json({
@@ -61,7 +61,7 @@ router.post('/', (req, res) => {
             });
         }
 
-        const articolo = service.create(req.body);
+        const articolo = await service.create(req.body);
 
         res.status(201).json(articolo);
 
@@ -72,9 +72,9 @@ router.post('/', (req, res) => {
     }
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
-        const articolo = service.update(
+        const articolo = await service.update(
             req.params.id,
             req.body
         );
@@ -94,9 +94,9 @@ router.put('/:id', (req, res) => {
     }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
-        const deleted = service.remove(req.params.id);
+        const deleted = await service.remove(req.params.id);
 
         if (!deleted) {
             return res.status(404).json({

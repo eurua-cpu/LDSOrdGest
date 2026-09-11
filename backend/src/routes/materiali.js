@@ -3,20 +3,20 @@ const service = require('../services/materiali');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        res.json(service.getAll());
+        res.json(await service.getAll());
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
         if (!req.body.codice || !req.body.um_base) {
             return res.status(400).json({ error: 'codice e um_base sono obbligatori' });
         }
-        res.status(201).json(service.create(req.body));
+        res.status(201).json(await service.create(req.body));
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

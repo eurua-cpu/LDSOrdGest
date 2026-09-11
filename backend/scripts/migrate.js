@@ -1,114 +1,118 @@
-const Database = require('better-sqlite3');
 const fs = require('fs');
 const path = require('path');
+const { pool } = require('../src/db');
 
 const ROOT_DIR = path.join(__dirname, '..');
-const DB_DIR = path.join(ROOT_DIR, 'db');
-const DB_FILE = path.join(DB_DIR, 'LDSOrdGest.db');
-const MIGRATIONS_DIR = path.join(ROOT_DIR, 'migrations');
+const MIGRATIONS_DIR = path.join(ROOT_DIR, 'migrations', 'postgres');
 
-// Crea data/ se non esiste
-if (!fs.existsSync(DB_DIR)) {
-    fs.mkdirSync(DB_DIR, { recursive: true });
-}
+async function migrate() {
+    console.log('================================');
+    console.log('PostgreSQL Database Migration');
+    console.log('================================');
+    console.log(`Migrations: ${MIGRATIONS_DIR}`);
+    console.log('');
 
-console.log('================================');
-console.log('SQLite Database Migration');
-console.log('================================');
-console.log(`Database: ${DB_FILE}`);
-console.log(`Migrations: ${MIGRATIONS_DIR}`);
-console.log('');
-
-// Connessione al database
-const db = new Database(DB_FILE);
-
-// Foreign keys
-db.pragma('foreign_keys = ON');
-
-// Tabella che tiene traccia delle migration
-db.exec(`
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        executed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-`);
-
-// Legge i file SQL
-const migrationFiles = fs
-    .readdirSync(MIGRATIONS_DIR)
-    .filter(file => file.endsWith('.sql'))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-
-// Migration già eseguite
-const executedMigrations = db
-    .prepare(`
-        SELECT name
-        FROM schema_migrations
-        ORDER BY name
-    `)
-    .all()
-    .map(row => row.name);
-
-console.log(`Migration trovate: ${migrationFiles.length}`);
-console.log(`Migration già eseguite: ${executedMigrations.length}`);
-console.log('');
-
-let executedCount = 0;
-
-for (const file of migrationFiles) {
-
-    if (executedMigrations.includes(file)) {
-        console.log(`✓ ${file} - già eseguita`);
-        continue;
-    }
-
-    console.log(`→ ${file} - esecuzione...`);
-
-    const migrationPath = path.join(MIGRATIONS_DIR, file);
-    const sql = fs.readFileSync(migrationPath, 'utf8');
+    const client = await pool.connect();
 
     try {
+        // Tabella che tiene traccia delle migration
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                id BIGSERIAL PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                executed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
 
-        const runMigration = db.transaction(() => {
+        // Legge esclusivamente le migration PostgreSQL
+        const migrationFiles = fs
+            .readdirSync(MIGRATIONS_DIR)
+            .filter(file => file.endsWith('.sql'))
+            .sort((a, b) =>
+                a.localeCompare(b, undefined, { numeric: true })
+            );
 
-            // Esegue SQL della migration
-            db.exec(sql);
+        const result = await client.query(`
+            SELECT name
+            FROM schema_migrations
+            ORDER BY name
+        `);
 
-            // Registra la migration
-            db.prepare(`
-                INSERT INTO schema_migrations (name)
-                VALUES (?)
-            `).run(file);
-        });
+        const executedMigrations = result.rows.map(row => row.name);
 
-        runMigration();
+        console.log(`Migration trovate: ${migrationFiles.length}`);
+        console.log(`Migration già eseguite: ${executedMigrations.length}`);
+        console.log('');
 
-        console.log(`✓ ${file} - completata`);
-        executedCount++;
+        let executedCount = 0;
+
+        for (const file of migrationFiles) {
+
+            if (executedMigrations.includes(file)) {
+                console.log(`✓ ${file} - già eseguita`);
+                continue;
+            }
+
+            console.log(`→ ${file} - esecuzione...`);
+
+            const migrationPath = path.join(MIGRATIONS_DIR, file);
+            const sql = fs.readFileSync(migrationPath, 'utf8');
+
+            try {
+                await client.query('BEGIN');
+
+                // Esegue la migration
+                await client.query(sql);
+
+                // Registra la migration
+                await client.query(
+                    `
+                    INSERT INTO schema_migrations (name)
+                    VALUES ($1)
+                    `,
+                    [file]
+                );
+
+                await client.query('COMMIT');
+
+                console.log(`✓ ${file} - completata`);
+                executedCount++;
+
+            } catch (error) {
+
+                await client.query('ROLLBACK');
+
+                console.error('');
+                console.error(`✗ ${file} - ERRORE`);
+                console.error('');
+                console.error(error.message);
+                console.error('');
+
+                throw error;
+            }
+        }
+
+        console.log('');
+
+        if (executedCount === 0) {
+            console.log('Database già aggiornato.');
+        } else {
+            console.log(`${executedCount} migration eseguite.`);
+        }
+
+        console.log('');
 
     } catch (error) {
 
-        console.error('');
-        console.error(`✗ ${file} - ERRORE`);
-        console.error('');
+        console.error('❌ Migration fallita');
         console.error(error.message);
-        console.error('');
+        process.exitCode = 1;
 
-        db.close();
+    } finally {
 
-        process.exit(1);
+        client.release();
+        await pool.end();
     }
 }
 
-console.log('');
-
-if (executedCount === 0) {
-    console.log('Database già aggiornato.');
-} else {
-    console.log(`${executedCount} migration eseguite.`);
-}
-
-console.log('');
-
-db.close();
+migrate();

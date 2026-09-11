@@ -1,9 +1,26 @@
-{ 
-  "name": "LDSOrdGestAPP",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {"dev":"tsx watch src/server.ts","build":"tsc","start":"node backend/src/server.js","migrate": "node backend/scripts/migrate.js","import": "node backend/scripts/import-csv.js"},
-  "dependencies": {"dotenv":"^16.4.7","fastify":"^5.2.1","postgres":"^3.4.5","better-sqlite3": "^13.0.3","express": "^5.2.1"
-  },
-  "devDependencies": {"@types/node":"^22.13.4","tsx":"^4.19.3","typescript":"^5.7.3"}
+{
+    "name": "LDSOrdGestAPP",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "tsx watch src/server.ts",
+        "build": "node -e \"console.log('JavaScript backend: build completato')\"",
+        "start": "node backend/src/server.js",
+        "migrate": "node backend/scripts/migrate.js",
+        "import": "node backend/scripts/import-csv.js",
+        "admin": "node backend/scripts/create_admin.js"
+    },
+    "dependencies": {
+        "better-sqlite3": "^13.0.3",
+        "dotenv": "^16.4.7",
+        "express": "^5.2.1",
+        "fastify": "^5.2.1",
+        "pg": "^8.23.0",
+        "postgres": "^3.4.5"
+    },
+    "devDependencies": {
+        "@types/node": "^22.13.4",
+        "tsx": "^4.19.3",
+        "typescript": "^5.7.3"
+    }
 }

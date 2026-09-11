@@ -1,0 +1,31 @@
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    password_hash TEXT NOT NULL,
+    nome VARCHAR(100),
+    cognome VARCHAR(100),
+    ruolo VARCHAR(50) NOT NULL DEFAULT 'USER',
+    attivo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email
+ON users (LOWER(email));
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_token
+ON sessions(token_hash);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_user
+ON sessions(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_expires
+ON sessions(expires_at);

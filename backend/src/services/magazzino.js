@@ -14,9 +14,9 @@ const { db } = require('../db');
  *
  * Giacenza = 85
  */
-function getGiacenzaFisica(articoloId) {
+async function getGiacenzaFisica(articoloId) {
 
-    const result = db.prepare(`
+    const result = await db.prepare(`
         SELECT
             COALESCE(SUM(quantita), 0) AS giacenza
         FROM MOVIMENTI
@@ -38,9 +38,9 @@ function getGiacenzaFisica(articoloId) {
  *
  * Non consideriamo le righe ANNULLATE.
  */
-function getStockImpegnato(articoloId, excludeOrderId = null) {
+async function getStockImpegnato(articoloId, excludeOrderId = null) {
 
-    const result = db.prepare(`
+    const result = await db.prepare(`
         SELECT
             COALESCE(
                 SUM(
@@ -74,13 +74,13 @@ function getStockImpegnato(articoloId, excludeOrderId = null) {
  * meno
  * quantità già impegnata.
  */
-function getStockDisponibile(articoloId, excludeOrderId = null) {
+async function getStockDisponibile(articoloId, excludeOrderId = null) {
 
     const fisico =
-        getGiacenzaFisica(articoloId);
+        await getGiacenzaFisica(articoloId);
 
     const impegnato =
-        getStockImpegnato(articoloId, excludeOrderId);
+        await getStockImpegnato(articoloId, excludeOrderId);
 
     return fisico - impegnato;
 }
@@ -91,9 +91,9 @@ function getStockDisponibile(articoloId, excludeOrderId = null) {
  * SITUAZIONE ARTICOLO
  * ============================================================
  */
-function getStockArticolo(articoloId) {
+async function getStockArticolo(articoloId) {
 
-    const articolo = db.prepare(`
+    const articolo = await db.prepare(`
         SELECT
             id,
             codice,
@@ -109,10 +109,10 @@ function getStockArticolo(articoloId) {
     }
 
     const giacenzaFisica =
-        getGiacenzaFisica(articoloId);
+        await getGiacenzaFisica(articoloId);
 
     const stockImpegnato =
-        getStockImpegnato(articoloId);
+        await getStockImpegnato(articoloId);
 
     const stockDisponibile =
         giacenzaFisica - stockImpegnato;
@@ -136,7 +136,7 @@ function getStockArticolo(articoloId) {
  * TUTTO IL MAGAZZINO
  * ============================================================
  */
-function getStock() {
+async function getStock() {
 
     return db.prepare(`
         SELECT
@@ -214,7 +214,7 @@ function getStock() {
     `).all();
 }
 
-function getStockMateriali() {
+async function getStockMateriali() {
     return db.prepare(`
         SELECT
             m.id AS materiale_id,
@@ -236,7 +236,7 @@ function getStockMateriali() {
                 COALESCE((SELECT SUM(mv2.quantita) FROM MOVIMENTI mv2 WHERE mv2.articolo_id = a2.id), 0) - COALESCE((SELECT SUM(r2.quantita - r2.quantita_consegnata) FROM RIGHE_ORDINE r2 WHERE r2.articolo_id = a2.id AND r2.stato_riga NOT IN (2, 3)), 0) AS stock_disponibile
             FROM ARTICOLI a2
         ) stock ON stock.articolo_id = a.id
-        GROUP BY m.id
+        GROUP BY m.id, u.codice, u.descrizione
         ORDER BY m.codice
     `).all();
 }
@@ -247,7 +247,7 @@ function getStockMateriali() {
  * VERIFICA DISPONIBILITÀ
  * ============================================================
  */
-function verificaDisponibilita(
+async function verificaDisponibilita(
     articoloId,
     quantita,
     excludeOrderId = null
@@ -266,7 +266,7 @@ function verificaDisponibilita(
     }
 
     const disponibile =
-        getStockDisponibile(articoloId, excludeOrderId);
+        await getStockDisponibile(articoloId, excludeOrderId);
 
     if (disponibile < Number(quantita)) {
 
@@ -286,7 +286,7 @@ function verificaDisponibilita(
  * CREA MOVIMENTO
  * ============================================================
  */
-function createMovimento({
+async function createMovimento({
     articoloId,
     tipo,
     quantita,
@@ -324,7 +324,7 @@ function createMovimento({
         );
     }
 
-    const articolo = db.prepare(`
+    const articolo = await db.prepare(`
         SELECT id, codice
         FROM ARTICOLI
         WHERE id = ?
@@ -336,7 +336,7 @@ function createMovimento({
         );
     }
 
-    const result = db.prepare(`
+    const result = await db.prepare(`
         INSERT INTO MOVIMENTI (
             articolo_id,
             tipo,
@@ -400,7 +400,7 @@ function normalizeMovementDate(value) {
  * CARICO
  * ============================================================
  */
-function carico({
+async function carico({
     articoloId,
     quantita,
     data = null,
@@ -434,7 +434,7 @@ function carico({
  * SCARICO
  * ============================================================
  */
-function scarico({
+async function scarico({
     articoloId,
     quantita,
     data = null,
@@ -460,7 +460,7 @@ function scarico({
      * già impegnato.
      */
     const fisico =
-        getGiacenzaFisica(articoloId);
+        await getGiacenzaFisica(articoloId);
 
     if (fisico < qta) {
 
@@ -490,7 +490,7 @@ function scarico({
  *
  * La vendita è uno scarico di magazzino.
  */
-function vendita({
+async function vendita({
     articoloId,
     quantita,
     ordineId,
@@ -523,7 +523,7 @@ function vendita({
  * RESO CLIENTE
  * ============================================================
  */
-function resoCliente({
+async function resoCliente({
     articoloId,
     quantita,
     ordineId,
@@ -556,7 +556,7 @@ function resoCliente({
  *
  * delta può essere positivo o negativo.
  */
-function rettifica({
+async function rettifica({
     articoloId,
     delta,
     note = null
@@ -584,7 +584,7 @@ function rettifica({
  * STORICO MOVIMENTI
  * ============================================================
  */
-function getMovimenti(
+async function getMovimenti(
     articoloId
 ) {
 

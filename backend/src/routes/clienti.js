@@ -4,9 +4,9 @@ const service = require('../services/clienti');
 const router = express.Router();
 
 // GET /api/clienti
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        res.json(service.getAll());
+        res.json(await service.getAll());
     } catch (error) {
         res.status(500).json({
             error: error.message
@@ -15,9 +15,9 @@ router.get('/', (req, res) => {
 });
 
 // GET /api/clienti/:id
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     try {
-        const cliente = service.getById(req.params.id);
+        const cliente = await service.getById(req.params.id);
 
         if (!cliente) {
             return res.status(404).json({
@@ -34,7 +34,7 @@ router.get('/:id', (req, res) => {
 });
 
 // POST /api/clienti
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
         if (!req.body.nome) {
             return res.status(400).json({
@@ -42,7 +42,7 @@ router.post('/', (req, res) => {
             });
         }
 
-        const cliente = service.create(req.body);
+        const cliente = await service.create(req.body);
 
         res.status(201).json(cliente);
 
@@ -54,9 +54,9 @@ router.post('/', (req, res) => {
 });
 
 // PUT /api/clienti/:id
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
-        const cliente = service.update(
+        const cliente = await service.update(
             req.params.id,
             req.body
         );
@@ -77,9 +77,9 @@ router.put('/:id', (req, res) => {
 });
 
 // DELETE /api/clienti/:id
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
-        const deleted = service.remove(req.params.id);
+        const deleted = await service.remove(req.params.id);
 
         if (!deleted) {
             return res.status(404).json({

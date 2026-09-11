@@ -14,7 +14,66 @@
 </head>
 
 <body>
-  <div class="app-shell">
+  <!-- LOGIN -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+
+      <div class="login-brand">
+        <span class="brand-mark">L</span>
+        <div>
+          <strong>OrdGest</strong>
+          <small>control room</small>
+        </div>
+      </div>
+
+      <div class="login-heading">
+        <p class="eyebrow">ACCESSO</p>
+        <h1>Benvenuto</h1>
+        <p>Accedi per continuare alla console operativa.</p>
+      </div>
+
+      <form id="login-form">
+
+        <label class="login-field">
+          <span>Email</span>
+          <input
+            type="email"
+            id="login-email"
+            name="email"
+            placeholder="nome@azienda.it"
+            autocomplete="username"
+            required
+          >
+        </label>
+
+        <label class="login-field">
+          <span>Password</span>
+          <input
+            type="password"
+            id="login-password"
+            name="password"
+            placeholder="Password"
+            autocomplete="current-password"
+            required
+          >
+        </label>
+
+        <div id="login-error" class="login-error hidden"></div>
+
+        <button
+          type="submit"
+          class="primary-button login-button"
+          id="login-button"
+        >
+          Accedi
+        </button>
+
+      </form>
+
+    </div>
+  </div>
+
+  <div class="app-shell hidden" id="app-shell">
     <aside class="sidebar">
       <div class="brand"><span class="brand-mark">L</span>
         <div><strong>OrdGest</strong><small>control room</small></div>
@@ -39,15 +98,51 @@
         <div class="breadcrumbs"><span>OrdGest</span><i>/</i><strong id="page-kicker">Panoramica</strong></div>
         <div class="top-actions"><span class="today" id="today"></span><button class="icon-button" id="refresh-button"
             title="Aggiorna dati">↻</button>
-          <div class="avatar">ER</div>
+          <div class="user-menu" id="user-menu">
+
+    <button
+        class="avatar"
+        id="user-menu-button"
+        type="button"
+        aria-expanded="false"
+        title="Menu utente"
+    >
+        <span id="user-avatar">--</span>
+    </button>
+
+    <div class="user-dropdown hidden" id="user-dropdown">
+
+        <div class="user-dropdown-header">
+            <div class="user-dropdown-avatar"><span id="user-avatar">--</span></div>
+
+            <div>
+                <strong id="user-menu-name"></strong>
+                <small id="user-menu-role"></small>
+            </div>
+        </div>
+
+        <div class="user-dropdown-divider"></div>
+
+        <button
+            type="button"
+            class="user-dropdown-item logout-item"
+            id="logout-button"
+        >
+            <span>↪</span>
+            Esci
+        </button>
+
+    </div>
+
+</div>
         </div>
       </header>
 
       <section class="page" id="overview-view">
         <div class="page-heading">
           <div>
-            <p class="eyebrow">GIOVEDI, 27 AGOSTO 2026</p>
-            <h1>Buongiorno, Eugenio</h1>
+            <p class="eyebrow" id="welcome-date"></p>
+            <h1>Buongiorno, <span id="welcome-name"></span></h1>
             <p class="subheading">Ecco il quadro operativo del tuo ordine management.</p>
           </div><button class="primary-button" data-action="new-order"><span>＋</span> Nuovo ordine</button>
         </div>
@@ -291,15 +386,18 @@
       </section>
     </main>
   </div>
-  <div class="mobile-nav-backdrop hidden" id="mobile-nav-backdrop"></div>
+ <div class="mobile-nav-backdrop hidden" id="mobile-nav-backdrop"></div>
 
-  <div class="drawer-backdrop hidden" id="drawer-backdrop">
-    <aside class="drawer" role="dialog" aria-modal="true"><button class="drawer-close" id="drawer-close"
-        title="Chiudi">×</button>
+  <div class="drawer-backdrop hidden" 
+       id="drawer-backdrop">
+    <aside class="drawer" role="dialog" aria-modal="true">
+      <button class="drawer-close" id="drawer-close" title="Chiudi">×</button>
       <div id="drawer-content"></div>
     </aside>
   </div>
+
   <div class="toast hidden" id="toast"></div>
+
   <script src="/app.js"></script>
 </body>
 

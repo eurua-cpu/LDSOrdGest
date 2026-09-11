@@ -1,6 +1,6 @@
 const { db } = require('../db');
 
-function getAll() {
+async function getAll() {
     return db.prepare(`
         SELECT m.*, u.codice AS um_base_codice, u.descrizione AS um_base_descrizione
         FROM MATERIALI m
@@ -9,8 +9,8 @@ function getAll() {
     `).all();
 }
 
-function create(data) {
-    const result = db.prepare(`
+async function create(data) {
+    const result = await db.prepare(`
         INSERT INTO MATERIALI (codice, descrizione, um_base, categoria)
         VALUES (?, ?, ?, ?)
     `).run(
@@ -23,7 +23,7 @@ function create(data) {
     return getById(result.lastInsertRowid);
 }
 
-function getById(id) {
+async function getById(id) {
     return db.prepare(`
         SELECT m.*, u.codice AS um_base_codice, u.descrizione AS um_base_descrizione
         FROM MATERIALI m

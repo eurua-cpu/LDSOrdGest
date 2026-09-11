@@ -1,6 +1,6 @@
 const { db } = require('../db');
 
-function getAll() {
+async function getAll() {
     return db.prepare(`
         SELECT *
         FROM CLIENTI
@@ -8,7 +8,7 @@ function getAll() {
     `).all();
 }
 
-function getById(id) {
+async function getById(id) {
     return db.prepare(`
         SELECT *
         FROM CLIENTI
@@ -16,8 +16,8 @@ function getById(id) {
     `).get(id);
 }
 
-function create(data) {
-    const result = db.prepare(`
+async function create(data) {
+    const result = await db.prepare(`
         INSERT INTO CLIENTI (
             nome,
             indirizzo,
@@ -39,8 +39,8 @@ function create(data) {
     return getById(result.lastInsertRowid);
 }
 
-function update(id, data) {
-    const result = db.prepare(`
+async function update(id, data) {
+    const result = await db.prepare(`
         UPDATE CLIENTI
         SET
             nome = ?,
@@ -67,8 +67,8 @@ function update(id, data) {
     return getById(id);
 }
 
-function remove(id) {
-    const result = db.prepare(`
+async function remove(id) {
+    const result = await db.prepare(`
         DELETE FROM CLIENTI
         WHERE id = ?
     `).run(id);

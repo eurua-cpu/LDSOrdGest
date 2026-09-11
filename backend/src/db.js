@@ -1,35 +1,68 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const { Pool } = require('pg');
+const { AsyncLocalStorage } = require('async_hooks');
 
-// Root del progetto
-const ROOT_DIR = path.join(__dirname, '..');
+const connectionString = process.env.DATABASE_URL;
 
-// Cartella e file database
-const DB_DIR = path.join(ROOT_DIR, 'db');
-const DB_FILE = path.join(DB_DIR, 'LDSOrdGest.db');
-
-// Crea la cartella data se non esiste
-if (!fs.existsSync(DB_DIR)) {
-    fs.mkdirSync(DB_DIR, { recursive: true });
+if (!connectionString) {
+    throw new Error('DATABASE_URL non configurata. Configura la variabile d\'ambiente PostgreSQL.');
 }
 
-// Connessione SQLite
-const db = new Database(DB_FILE);
+const pool = new Pool({
+    connectionString,
+    ssl: connectionString.includes('127.0.0.1') || connectionString.includes('localhost')
+        ? false
+        : { rejectUnauthorized: false }
+});
+const transactionStorage = new AsyncLocalStorage();
 
-// Configurazioni SQLite
-db.pragma('foreign_keys = ON');
+function postgresParameters(sql, values) {
+    let index = 0;
+    return sql.replace(/\?/g, () => `$${++index}`);
+}
 
-// WAL migliora le prestazioni quando ci sono letture e scritture
-// contemporaneamente
-db.pragma('journal_mode = WAL');
+function createStatement(text, transactionClient = pool) {
+    const queryText = postgresParameters(text);
+    return {
+        async all(...values) {
+            const result = await transactionClient.query(queryText, values);
+            return result.rows;
+        },
+        async get(...values) {
+            const result = await transactionClient.query(queryText, values);
+            return result.rows[0];
+        },
+        async run(...values) {
+            const result = await transactionClient.query(queryText, values);
+            return {
+                changes: result.rowCount,
+                lastInsertRowid: result.rows[0]?.id
+            };
+        }
+    };
+}
 
-// Migliora la gestione delle transazioni
-db.pragma('busy_timeout = 5000');
-
-console.log(`SQLite database: ${DB_FILE}`);
-
-module.exports = { 
-    db, 
-    DB_FILE
+const db = {
+    prepare(text) {
+        return createStatement(text, transactionStorage.getStore() || pool);
+    },
+    transaction(callback) {
+        return async (...args) => {
+            const client = await pool.connect();
+            try {
+                await client.query('BEGIN');
+                const result = await transactionStorage.run(client, () => callback(...args));
+                await client.query('COMMIT');
+                return result;
+            } catch (error) {
+                await client.query('ROLLBACK');
+                throw error;
+            } finally {
+                client.release();
+            }
+        };
+    }
 };
+
+pool.on('error', (error) => console.error('Errore PostgreSQL:', error));
+
+module.exports = { db, pool };

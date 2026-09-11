@@ -1,6 +1,11 @@
 const express = require('express');
 const path = require('path');
-const { db } = require('./db');
+const { pool } = require('./db');
+
+const {
+    requireAuth
+} = require('./middleware/auth');
+const authRoutes = require('./routes/auth');
 
 const clientiRoutes = require('./routes/clienti');
 const articoliRoutes = require('./routes/articoli');
@@ -9,13 +14,46 @@ const movimentiRoutes = require('./routes/movimenti');
 const magazzinoRoutes = require('./routes/magazzino');
 const materialiRoutes = require('./routes/materiali');
 
+
 const app = express();
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../../frontend')));
 
-app.get('/api/um', (req, res) => {
-    res.json(db.prepare('SELECT id, codice, descrizione FROM UM ORDER BY codice').all());
+console.log('>>> REGISTRO AUTH ROUTES');
+
+
+
+// ==============================
+// AUTH
+// ==============================
+
+app.use(
+    '/api/auth',
+    authRoutes
+);
+console.log('>>> AUTH ROUTES REGISTRATE');
+// ==============================
+// PUBLIC API
+// ==============================
+
+app.get('/api/health', (req, res) => {
+
+    res.json({
+        status: 'OK'
+    });
+
+});
+
+// ==============================
+// PROTECTED API
+// ==============================
+
+app.use(requireAuth);
+
+app.get('/api/um', async (req, res) => {
+    const result = await pool.query('SELECT id, codice, descrizione FROM UM ORDER BY codice');
+    res.json(result.rows);
 });
 
 // Routes
@@ -26,14 +64,8 @@ app.use('/api/movimenti', movimentiRoutes);
 app.use('/api/magazzino', magazzinoRoutes);
 app.use('/api/materiali', materialiRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'OK'
-    });
-});
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
     console.log(`Server avviato su http://localhost:${PORT}`);

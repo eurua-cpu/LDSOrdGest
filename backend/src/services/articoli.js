@@ -1,6 +1,6 @@
 const { db } = require('../db');
 
-function getAll() {
+async function getAll() {
     return db.prepare(`
         SELECT a.*, 
         m.descrizione AS materiale_descrizione, 
@@ -15,11 +15,11 @@ function getAll() {
             ON u.id = a.um_vendita
         JOIN UM ub
             ON ub.id = m.um_base
-        ORDER BY codice
+        ORDER BY a.codice
     `).all();
 }
 
-function getById(id) {
+async function getById(id) {
     return db.prepare(`
         SELECT a.*, 
         m.descrizione AS materiale_descrizione, 
@@ -38,8 +38,8 @@ function getById(id) {
     `).get(id);
 }
 
-function create(data) {
-    const result = db.prepare(`
+async function create(data) {
+    const result = await db.prepare(`
         INSERT INTO ARTICOLI (
             codice,
             descrizione,
@@ -63,8 +63,8 @@ function create(data) {
     return getById(result.lastInsertRowid);
 }
 
-function update(id, data) {
-    const result = db.prepare(`
+async function update(id, data) {
+    const result = await db.prepare(`
         UPDATE ARTICOLI
         SET
             codice = ?,
@@ -93,8 +93,8 @@ function update(id, data) {
     return getById(id);
 }
 
-function remove(id) {
-    const result = db.prepare(`
+async function remove(id) {
+    const result = await db.prepare(`
         DELETE FROM ARTICOLI
         WHERE id = ?
     `).run(id);
@@ -102,15 +102,15 @@ function remove(id) {
     return result.changes > 0;
 }
 
-function getGiacenza(id) {
-    const result = db.prepare(`
+async function getGiacenza(id) {
+    const result = await db.prepare(`
         SELECT
             COALESCE(SUM(quantita), 0) AS giacenza
         FROM MOVIMENTI
         WHERE articolo_id = ?
     `).get(id);
 
-    return result.giacenza;
+    return result?.giacenza;
 }
 
 module.exports = {

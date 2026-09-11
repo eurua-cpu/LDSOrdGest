@@ -4,9 +4,9 @@ const service = require('../services/movimenti');
 const router = express.Router();
 
 // Tutti i movimenti
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        res.json(service.getAll());
+        res.json(await service.getAll());
     } catch (error) {
         res.status(500).json({
             error: error.message
@@ -15,10 +15,10 @@ router.get('/', (req, res) => {
 });
 
 // Movimenti di un articolo
-router.get('/articolo/:articoloId', (req, res) => {
+router.get('/articolo/:articoloId', async (req, res) => {
     try {
         res.json(
-            service.getByArticolo(req.params.articoloId)
+            await service.getByArticolo(req.params.articoloId)
         );
     } catch (error) {
         res.status(500).json({
@@ -28,9 +28,9 @@ router.get('/articolo/:articoloId', (req, res) => {
 });
 
 // Giacenza
-router.get('/articolo/:articoloId/giacenza', (req, res) => {
+router.get('/articolo/:articoloId/giacenza', async (req, res) => {
     try {
-        const giacenza = service.getGiacenza(
+        const giacenza = await service.getGiacenza(
             req.params.articoloId
         );
 
@@ -47,7 +47,7 @@ router.get('/articolo/:articoloId/giacenza', (req, res) => {
 });
 
 // Nuovo movimento
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     try {
 
         if (!req.body.articolo_id) {
@@ -68,7 +68,7 @@ router.post('/', (req, res) => {
             });
         }
 
-        const movimento = service.create(req.body);
+        const movimento = await service.create(req.body);
 
         res.status(201).json(movimento);
 

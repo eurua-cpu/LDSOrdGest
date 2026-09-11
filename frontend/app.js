@@ -9,8 +9,178 @@ const formatMoney = (value) => Number(value || 0).toLocaleString('it-IT', { styl
 const formatDate = (value) => value ? new Date(`${value}T00:00:00`).toLocaleDateString('it-IT') : '—';
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[char]));
 
+
+async function checkSession() {
+    const response = await fetch('/api/auth/me', {
+        method: 'GET',
+        credentials: 'include'
+    });
+
+    if (!response.ok) {
+        return null;
+    }
+
+    const data = await response.json();
+
+    if (!data.authenticated) {
+        return null;
+    }
+
+    setLoggedUser(data.user);
+
+    return data.user;
+}
+
+async function login(email, password) {
+    const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+            email,
+            password
+        })
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(data.error || 'Login fallito');
+    }
+    
+    setLoggedUser(data.user);
+
+    return data;
+}
+
+async function logout() {
+    await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+    });
+
+    document
+        .getElementById('app-shell')
+        .classList.add('hidden');
+
+    document
+        .getElementById('login-screen')
+        .classList.remove('hidden');
+
+    document
+        .getElementById('login-password')
+        .value = '';
+}
+
+const loginForm = document.getElementById('login-form');
+
+loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const email = document
+        .getElementById('login-email')
+        .value
+        .trim();
+
+    const password = document
+        .getElementById('login-password')
+        .value;
+
+    const errorElement =
+        document.getElementById('login-error');
+
+    const loginButton =
+        document.getElementById('login-button');
+
+    errorElement.classList.add('hidden');
+    errorElement.textContent = '';
+
+    loginButton.disabled = true;
+    loginButton.textContent = 'Accesso...';
+
+    try {
+        const data = await login(email, password);
+
+        console.log('Login effettuato:', data.user);
+
+        document
+            .getElementById('login-screen')
+            .classList.add('hidden');
+
+        document
+            .getElementById('app-shell')
+            .classList.remove('hidden');
+
+        await loadData();
+
+    } catch (error) {
+
+        errorElement.textContent =
+            error.message || 'Credenziali non valide';
+
+        errorElement.classList.remove('hidden');
+
+    } finally {
+
+        loginButton.disabled = false;
+        loginButton.textContent = 'Accedi';
+    }
+});
+
+async function initApp() {
+    try {
+        const user = await checkSession();
+
+        if (user) {
+            console.log('Sessione valida:', user);
+
+            document
+                .getElementById('login-screen')
+                .classList.add('hidden');
+
+            document
+                .getElementById('app-shell')
+                .classList.remove('hidden');
+
+            await loadData();
+
+        } else {
+
+            console.log('Nessuna sessione attiva');
+
+            document
+                .getElementById('login-screen')
+                .classList.remove('hidden');
+
+            document
+                .getElementById('app-shell')
+                .classList.add('hidden');
+        }
+
+    } catch (error) {
+        console.error('Errore inizializzazione:', error);
+
+        document
+            .getElementById('login-screen')
+            .classList.remove('hidden');
+
+        document
+            .getElementById('app-shell')
+            .classList.add('hidden');
+    }
+}
+
+setCurrentDate();
+initApp();
+
 async function api(path, options = {}) {
-  const response = await fetch(`/api/${path}`, { headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }, ...options });
+  const response = await fetch(`/api/${path}`, {
+     credentials: 'include',
+     headers: { 'Content-Type': 'application/json',
+       ...(options.headers || {}) },
+        ...options });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     throw new Error(body.error || `Errore ${response.status}`);
@@ -209,3 +379,155 @@ function switchView(view) { document.querySelectorAll('.page').forEach((page) =>
 
 document.addEventListener('click', (event) => { const nav = event.target.closest('[data-view]'); if (nav) switchView(nav.dataset.view); const target = event.target.closest('[data-view-target]'); if (target) switchView(target.dataset.viewTarget); if (event.target.closest('[data-action="new-order"]')) orderForm(); if (event.target.closest('[data-action="new-customer"]')) customerForm(); if (event.target.closest('[data-action="new-product"]')) productForm(); if (event.target.closest('[data-action="new-material"]')) materialForm(); if (event.target.closest('[data-action="new-movement"]')) movementForm(); const orderButton = event.target.closest('[data-order-id]'); if (orderButton) showOrder(orderButton.dataset.orderId); const copyButton = event.target.closest('[data-copy-order-id]'); if (copyButton) copyOrder(copyButton.dataset.copyOrderId); const customerButton = event.target.closest('[data-customer-id]'); if (customerButton) customerForm(state.customers.find((item) => item.id === Number(customerButton.dataset.customerId))); const customerCopyButton = event.target.closest('[data-copy-customer-id]'); if (customerCopyButton) copyCustomer(customerCopyButton.dataset.copyCustomerId); const productButton = event.target.closest('[data-product-id]'); if (productButton) productForm(state.products.find((item) => item.id === Number(productButton.dataset.productId))); });
 $('#drawer-close').addEventListener('click', closeDrawer); $('#drawer-backdrop').addEventListener('click', (event) => { if (event.target.id === 'drawer-backdrop') closeDrawer(); }); $('#refresh-button').addEventListener('click', loadData); $('#warehouse-refresh').addEventListener('click', () => loadWarehouse().catch((error) => showToast(error.message, true))); $('#order-search').addEventListener('input', renderOrders); $('#order-filter').addEventListener('change', renderOrders); $('#customer-search').addEventListener('input', renderCustomers); $('#product-search').addEventListener('input', renderProducts); $('#today').textContent = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }); loadData();
+
+const userMenuButton = document.getElementById('user-menu-button');
+const userDropdown = document.getElementById('user-dropdown');
+const logoutButton = document.getElementById('logout-button');
+
+userMenuButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+
+    const isOpen = !userDropdown.classList.contains('hidden');
+
+    if (isOpen) {
+        userDropdown.classList.add('hidden');
+        userMenuButton.setAttribute('aria-expanded', 'false');
+    } else {
+        userDropdown.classList.remove('hidden');
+        userMenuButton.setAttribute('aria-expanded', 'true');
+    }
+});
+
+
+document.addEventListener('click', (event) => {
+
+    if (!event.target.closest('#user-menu')) {
+        userDropdown.classList.add('hidden');
+        userMenuButton.setAttribute('aria-expanded', 'false');
+    }
+
+});
+
+
+logoutButton.addEventListener('click', async () => {
+
+    try {
+
+        logoutButton.disabled = true;
+        logoutButton.textContent = 'Uscita...';
+
+        const response = await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            throw new Error('Errore durante il logout');
+        }
+
+        // Chiudi menu
+        userDropdown.classList.add('hidden');
+
+        // Nascondi applicazione
+        document
+            .getElementById('app-shell')
+            .classList.add('hidden');
+
+        // Mostra login
+        document
+            .getElementById('login-screen')
+            .classList.remove('hidden');
+
+        // Pulisci password
+        const passwordInput =
+            document.getElementById('login-password');
+
+        if (passwordInput) {
+            passwordInput.value = '';
+        }
+
+        // Focus sull'email
+        const emailInput =
+            document.getElementById('login-email');
+
+        if (emailInput) {
+            emailInput.focus();
+        }
+
+    } catch (error) {
+
+        console.error('Errore logout:', error);
+
+        showToast(
+            error.message || 'Errore durante il logout',
+            true
+        );
+
+    } finally {
+
+        logoutButton.disabled = false;
+        logoutButton.innerHTML = '<span>↪</span> Esci';
+    }
+});
+
+function setLoggedUser(user) {
+    if (!user) return;
+
+    const nome = user.nome || '';
+    const cognome = user.cognome || '';
+
+    const nomeCompleto = `${nome} ${cognome}`.trim();
+
+    // Nome nella pagina principale
+    const welcomeName = $('#welcome-name');
+    if (welcomeName) {
+        welcomeName.textContent = nome || nomeCompleto;
+    }
+
+    // Nome nel menu utente
+    const userMenuName = $('#user-menu-name');
+    if (userMenuName) {
+        userMenuName.textContent = nomeCompleto;
+    }
+
+    // Ruolo
+    const userMenuRole = $('#user-menu-role');
+    if (userMenuRole) {
+        userMenuRole.textContent = user.ruolo || '';
+    }
+
+    // Iniziali avatar
+    const avatar = $('#user-avatar');
+    if (avatar) {
+        const iniziali =
+            `${nome.charAt(0)}${cognome.charAt(0)}`.toUpperCase();
+
+        avatar.textContent = iniziali || '--';
+    }
+}
+function setCurrentDate() {
+    const now = new Date();
+
+    const dateText = now.toLocaleDateString('it-IT', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+    });
+
+    const welcomeDate = $('#welcome-date');
+
+    if (welcomeDate) {
+        welcomeDate.textContent = dateText.toUpperCase();
+    }
+
+    const today = $('#today');
+
+    if (today) {
+        today.textContent = now.toLocaleDateString('it-IT', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+}

@@ -1,7 +1,7 @@
 const { db } = require('../db');
 
-function getAll() {
-    return normalizeDates(db.prepare(`
+async function getAll() {
+    return normalizeDates(await db.prepare(`
         SELECT
             m.*,
             a.codice AS articolo_codice,
@@ -17,8 +17,8 @@ function getAll() {
     `).all());
 }
 
-function getByArticolo(articoloId) {
-    return normalizeDates(db.prepare(`
+async function getByArticolo(articoloId) {
+    return normalizeDates(await db.prepare(`
         SELECT
             m.*,
             a.codice AS articolo_codice,
@@ -49,20 +49,20 @@ function formatDate(value) {
     return match ? `${match[3]}-${match[2]}-${match[1]}` : text;
 }
 
-function getGiacenza(articoloId) {
-    const result = db.prepare(`
+async function getGiacenza(articoloId) {
+    const result = await db.prepare(`
         SELECT
             COALESCE(SUM(quantita), 0) AS giacenza
         FROM MOVIMENTI
         WHERE articolo_id = ?
     `).get(articoloId);
 
-    return result.giacenza;
+    return result?.giacenza;
 }
 
-function create(data) {
+async function create(data) {
 
-    const result = db.prepare(`
+    const result = await db.prepare(`
         INSERT INTO MOVIMENTI (
             articolo_id,
             tipo,
