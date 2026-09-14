@@ -45,7 +45,7 @@
         display: block;
         width: 20px;
         height: 2px;
-        background: var(--teal-dark);
+        background: #eef1f0;
         border-radius: 2px
     }
 
@@ -1689,6 +1689,20 @@ select {
     font-weight: 700
 }
 
+.danger-button {
+    background: #fff0f0;
+    color: #b54545;
+    border: 1px solid #f0caca;
+    border-radius: 6px;
+    padding: 11px 15px;
+    font-weight: 700;
+    margin-right: auto
+}
+
+.danger-button:hover {
+    background: #ffe3e3
+}
+
 .line-editor {
     border: 1px solid var(--line);
     padding: 15px;
@@ -2054,3 +2068,460 @@ select {
 .logout-item {
     color: #b42318;
 }
+/* =========================================================
+   MOBILE TABLES — massimo 3 colonne / 3 righe
+   Ultimo override: prevale sulle regole mobile precedenti.
+   ========================================================= */
+@media (max-width: 760px) {
+    .table-wrap {
+        overflow: visible !important;
+    }
+
+    .table-wrap table {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: fixed;
+    }
+
+    .table-wrap table tbody {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .table-wrap table tbody tr {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .table-wrap table thead {
+        display: none;
+    }
+
+    .table-wrap table tbody tr {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        grid-template-rows: auto auto auto !important;
+        gap: 0 10px;
+        min-height: 0 !important;
+        padding: 10px 12px !important;
+        border-bottom: 1px solid var(--line);
+        align-items: center;
+    }
+
+    .table-wrap table tbody td {
+        display: block !important;
+        min-width: 0 !important;
+        width: auto !important;
+        max-width: 100% !important;
+        padding: 5px 0 !important;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        box-sizing: border-box !important;
+    }
+
+    .table-wrap table tbody td.empty {
+        grid-column: 1 / -1 !important;
+        grid-row: 1 / -1 !important;
+        text-align: center;
+        padding: 20px 0 !important;
+    }
+
+    /* Bottoni sempre visibili su touch/mobile */
+    .table-wrap .row-action {
+        display: grid !important;
+        place-items: center;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        width: 30px !important;
+        height: 30px !important;
+        padding: 0 !important;
+    }
+
+    .table-wrap .order-actions,
+    .table-wrap .customer-actions {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* =====================================================
+       ORDINI — 3 righe x massimo 3 colonne
+       ===================================================== */
+    #orders-table tr.order-table-row td:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    #orders-table tr.order-table-row td:nth-child(2) {
+        grid-column: 2 / 4;
+        grid-row: 1;
+    }
+
+    #orders-table tr.order-table-row td:nth-child(3) {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    #orders-table tr.order-table-row td:nth-child(4) {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    #orders-table tr.order-table-row td:nth-child(5) {
+        grid-column: 3;
+        grid-row: 2;
+    }
+
+    #orders-table tr.order-table-row td:nth-child(6) {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    #orders-table tr.order-table-row td:nth-child(7) {
+        grid-column: 2;
+        grid-row: 3;
+    }
+
+    #orders-table tr.order-table-row td:nth-child(8) {
+        grid-column: 3;
+        grid-row: 3;
+        justify-self: end;
+    }
+
+    /* =====================================================
+       ORDINI RECENTI — 3 righe x massimo 3 colonne
+       ===================================================== */
+    #recent-orders tr.order-table-row td:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    #recent-orders tr.order-table-row td:nth-child(2) {
+        grid-column: 2 / 4;
+        grid-row: 1;
+    }
+
+    #recent-orders tr.order-table-row td:nth-child(3) {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    #recent-orders tr.order-table-row td:nth-child(4) {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    #recent-orders tr.order-table-row td:nth-child(5) {
+        grid-column: 3;
+        grid-row: 2;
+    }
+
+    #recent-orders tr.order-table-row td:nth-child(6) {
+        grid-column: 1 / 3;
+        grid-row: 3;
+    }
+
+    #recent-orders tr.order-table-row td:nth-child(7) {
+        grid-column: 3;
+        grid-row: 3;
+        justify-self: end;
+    }
+
+    /* =====================================================
+       CLIENTI — 3 righe x massimo 3 colonne
+       ===================================================== */
+    #customers-table tr.customer-table-row td:nth-child(1) {
+        grid-column: 1 / 4;
+        grid-row: 1;
+    }
+
+    #customers-table tr.customer-table-row td:nth-child(2) {
+        grid-column: 1 / 3;
+        grid-row: 2;
+    }
+
+    #customers-table tr.customer-table-row td:nth-child(3) {
+        grid-column: 3;
+        grid-row: 2;
+    }
+
+    #customers-table tr.customer-table-row td:nth-child(4) {
+        grid-column: 1 / 3;
+        grid-row: 3;
+    }
+
+    #customers-table tr.customer-table-row td:nth-child(5) {
+        grid-column: 3;
+        grid-row: 3;
+        justify-self: end;
+    }
+
+    /* =====================================================
+       ARTICOLI — 3 righe x massimo 3 colonne
+       ===================================================== */
+    #products-table tbody tr:not(.empty) td:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    #products-table tbody tr:not(.empty) td:nth-child(2) {
+        grid-column: 2 / 4;
+        grid-row: 1;
+    }
+
+    #products-table tbody tr:not(.empty) td:nth-child(3) {
+        grid-column: 1 / 3;
+        grid-row: 2;
+    }
+
+    #products-table tbody tr:not(.empty) td:nth-child(4) {
+        grid-column: 3;
+        grid-row: 2;
+    }
+
+    #products-table tbody tr:not(.empty) td:nth-child(5) {
+        grid-column: 1 / 3;
+        grid-row: 3;
+    }
+
+    #products-table tbody tr:not(.empty) td:nth-child(6) {
+        grid-column: 3;
+        grid-row: 3;
+        justify-self: end;
+    }
+
+    /* =====================================================
+       MAGAZZINO — articoli e materiali
+       ===================================================== */
+    #warehouse-articles tr.warehouse-table-row td:nth-child(1),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    #warehouse-articles tr.warehouse-table-row td:nth-child(2),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(2) {
+        grid-column: 2 / 4;
+        grid-row: 1;
+    }
+
+    #warehouse-articles tr.warehouse-table-row td:nth-child(3),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(3) {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    #warehouse-articles tr.warehouse-table-row td:nth-child(4),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(4) {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    #warehouse-articles tr.warehouse-table-row td:nth-child(5),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(5) {
+        grid-column: 3;
+        grid-row: 2;
+    }
+
+    #warehouse-articles tr.warehouse-table-row td:nth-child(6),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(6) {
+        grid-column: 1 / 4;
+        grid-row: 3;
+    }
+
+    /* =====================================================
+       MOVIMENTI — 3 righe x massimo 3 colonne
+       ===================================================== */
+    #warehouse-movements tr.movement-table-row td:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    #warehouse-movements tr.movement-table-row td:nth-child(2) {
+        grid-column: 2 / 4;
+        grid-row: 1;
+    }
+
+    #warehouse-movements tr.movement-table-row td:nth-child(3) {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    #warehouse-movements tr.movement-table-row td:nth-child(4) {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    #warehouse-movements tr.movement-table-row td:nth-child(5) {
+        grid-column: 3;
+        grid-row: 2;
+    }
+
+    #warehouse-movements tr.movement-table-row td:nth-child(6) {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    #warehouse-movements tr.movement-table-row td:nth-child(7) {
+        grid-column: 2;
+        grid-row: 3;
+    }
+
+    #warehouse-movements tr.movement-table-row td:nth-child(8) {
+        grid-column: 3;
+        grid-row: 3;
+    }
+}
+
+/* =========================================================
+   MOBILE TABLES — iPhone/Safari robust layout
+   Ultimo override: usa FLEX invece di GRID sulle <tr>.
+   3 colonne reali, massimo 3 righe, azioni sempre visibili.
+   ========================================================= */
+@media (max-width: 760px) {
+    .table-wrap,
+    .table-wrap table,
+    .table-wrap table tbody {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .table-wrap {
+        overflow: visible !important;
+    }
+
+    .table-wrap table {
+        display: block !important;
+        border-collapse: separate !important;
+        table-layout: auto !important;
+    }
+
+    .table-wrap table thead {
+        display: none !important;
+    }
+
+    .table-wrap table tbody {
+        display: block !important;
+    }
+
+    .table-wrap table tbody tr {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 9px 12px !important;
+        box-sizing: border-box !important;
+        gap: 0 !important;
+        align-items: center !important;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .table-wrap table tbody td {
+        display: block !important;
+        flex: 0 0 33.333333% !important;
+        width: 33.333333% !important;
+        max-width: 33.333333% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 5px 5px !important;
+        box-sizing: border-box !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+        overflow: hidden !important;
+    }
+
+    .table-wrap table tbody td.empty {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        text-align: center;
+        padding: 20px 0 !important;
+    }
+
+    /* Bottoni: sempre visibili e dentro la terza colonna */
+    .table-wrap .row-action {
+        display: inline-grid !important;
+        place-items: center !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        width: 30px !important;
+        height: 30px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .table-wrap .order-actions,
+    .table-wrap .customer-actions {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 5px !important;
+        width: 100% !important;
+    }
+
+    /* --- ORDINI --- */
+    #orders-table tr.order-table-row td:nth-child(1) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #orders-table tr.order-table-row td:nth-child(2) { flex-basis: 66.666667% !important; max-width: 66.666667% !important; }
+    #orders-table tr.order-table-row td:nth-child(3) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #orders-table tr.order-table-row td:nth-child(4) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #orders-table tr.order-table-row td:nth-child(5) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #orders-table tr.order-table-row td:nth-child(6) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #orders-table tr.order-table-row td:nth-child(7) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #orders-table tr.order-table-row td:nth-child(8) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; text-align: right !important; }
+
+    /* --- ORDINI RECENTI --- */
+    #recent-orders tr.order-table-row td:nth-child(1) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #recent-orders tr.order-table-row td:nth-child(2) { flex-basis: 66.666667% !important; max-width: 66.666667% !important; }
+    #recent-orders tr.order-table-row td:nth-child(3) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #recent-orders tr.order-table-row td:nth-child(4) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #recent-orders tr.order-table-row td:nth-child(5) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #recent-orders tr.order-table-row td:nth-child(6) { flex-basis: 66.666667% !important; max-width: 66.666667% !important; }
+    #recent-orders tr.order-table-row td:nth-child(7) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; text-align: right !important; }
+
+    /* --- CLIENTI --- */
+    #customers-table tr.customer-table-row td:nth-child(1) { flex-basis: 100% !important; max-width: 100% !important; }
+    #customers-table tr.customer-table-row td:nth-child(2) { flex-basis: 66.666667% !important; max-width: 66.666667% !important; }
+    #customers-table tr.customer-table-row td:nth-child(3) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #customers-table tr.customer-table-row td:nth-child(4) { flex-basis: 66.666667% !important; max-width: 66.666667% !important; }
+    #customers-table tr.customer-table-row td:nth-child(5) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; text-align: right !important; }
+
+    /* --- ARTICOLI --- */
+    #products-table tbody tr:not(.empty) td:nth-child(1) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #products-table tbody tr:not(.empty) td:nth-child(2) { flex-basis: 66.666667% !important; max-width: 66.666667% !important; }
+    #products-table tbody tr:not(.empty) td:nth-child(3) { flex-basis: 66.666667% !important; max-width: 66.666667% !important; }
+    #products-table tbody tr:not(.empty) td:nth-child(4) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #products-table tbody tr:not(.empty) td:nth-child(5) { flex-basis: 66.666667% !important; max-width: 66.666667% !important; }
+    #products-table tbody tr:not(.empty) td:nth-child(6) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; text-align: right !important; }
+
+    /* --- MAGAZZINO --- */
+    #warehouse-articles tr.warehouse-table-row td:nth-child(1),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(1) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #warehouse-articles tr.warehouse-table-row td:nth-child(2),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(2) { flex-basis: 66.666667% !important; max-width: 66.666667% !important; }
+    #warehouse-articles tr.warehouse-table-row td:nth-child(3),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(3) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #warehouse-articles tr.warehouse-table-row td:nth-child(4),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(4) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #warehouse-articles tr.warehouse-table-row td:nth-child(5),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(5) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #warehouse-articles tr.warehouse-table-row td:nth-child(6),
+    #warehouse-materials tr.warehouse-table-row td:nth-child(6) { flex-basis: 100% !important; max-width: 100% !important; }
+
+    /* --- MOVIMENTI --- */
+    #warehouse-movements tr.movement-table-row td:nth-child(1) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #warehouse-movements tr.movement-table-row td:nth-child(2) { flex-basis: 66.666667% !important; max-width: 66.666667% !important; }
+    #warehouse-movements tr.movement-table-row td:nth-child(3) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #warehouse-movements tr.movement-table-row td:nth-child(4) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #warehouse-movements tr.movement-table-row td:nth-child(5) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #warehouse-movements tr.movement-table-row td:nth-child(6) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #warehouse-movements tr.movement-table-row td:nth-child(7) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+    #warehouse-movements tr.movement-table-row td:nth-child(8) { flex-basis: 33.333333% !important; max-width: 33.333333% !important; }
+}
+

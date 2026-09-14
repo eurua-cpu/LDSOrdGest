@@ -58,7 +58,7 @@ async function getStockImpegnato(articoloId, excludeOrderId = null) {
         WHERE r.articolo_id = ?
 
         AND s.id NOT IN (2, 3)
-        AND (? IS NULL OR r.ordine_id <> ?)
+        AND ($2::integer IS NULL OR r.ordine_id <> $3::integer)
     `).get(articoloId, excludeOrderId, excludeOrderId);
 
     return Number(result.impegnato);

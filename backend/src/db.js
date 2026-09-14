@@ -32,7 +32,10 @@ function createStatement(text, transactionClient = pool) {
             return result.rows[0];
         },
         async run(...values) {
-            const result = await transactionClient.query(queryText, values);
+            const insertQuery = /^\s*INSERT\b/i.test(queryText) && !/\bRETURNING\b/i.test(queryText)
+                ? `${queryText}\nRETURNING id`
+                : queryText;
+            const result = await transactionClient.query(insertQuery, values);
             return {
                 changes: result.rowCount,
                 lastInsertRowid: result.rows[0]?.id

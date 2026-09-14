@@ -341,6 +341,20 @@ function copyCustomer(id) {
 function customerForm(customer = {}) {
   const editing = Boolean(customer.id);
   openDrawer(`<p class="eyebrow">ANAGRAFICA CLIENTE</p><h2>${editing ? 'Modifica cliente' : 'Nuovo cliente'}</h2><p class="drawer-subtitle">Completa i dati essenziali del contatto.</p><form id="customer-form" data-id="${customer.id || ''}"><div class="form-grid"><div class="field full"><label>Nome / Ragione sociale *</label><input name="nome" required value="${escapeHtml(customer.nome)}"></div><div class="field full"><label>Indirizzo</label><input name="indirizzo" value="${escapeHtml(customer.indirizzo)}"></div><div class="field"><label>Località</label><input name="localita" value="${escapeHtml(customer.localita)}"></div><div class="field"><label>Telefono</label><input name="telefono" value="${escapeHtml(customer.telefono)}"></div><div class="field"><label>Zona</label><input name="zona" value="${escapeHtml(customer.zona)}"></div><div class="field full"><label>Note</label><textarea name="note">${escapeHtml(customer.note)}</textarea></div></div><div class="form-actions"><button type="button" class="secondary-button" id="cancel-form">Annulla</button><button class="primary-button">${editing ? 'Salva modifiche' : 'Crea cliente'}</button></div></form>`);
+    if (editing) {
+        $('#customer-form .form-actions').insertAdjacentHTML('afterbegin', '<button type="button" class="danger-button" id="delete-customer">Elimina cliente</button>');
+        $('#delete-customer').addEventListener('click', async () => {
+            if (!window.confirm(`Eliminare definitivamente il cliente "${customer.nome}"?`)) return;
+            try {
+                await api(`clienti/${customer.id}`, { method: 'DELETE' });
+                closeDrawer();
+                await loadData();
+                showToast('Cliente eliminato');
+            } catch (error) {
+                showToast(error.message, true);
+            }
+        });
+    }
   $('#customer-form').addEventListener('submit', async (event) => { event.preventDefault(); const data = Object.fromEntries(new FormData(event.currentTarget)); try { await api(`clienti${editing ? `/${customer.id}` : ''}`, { method: editing ? 'PUT' : 'POST', body: JSON.stringify(data) }); closeDrawer(); await loadData(); showToast(editing ? 'Cliente aggiornato' : 'Cliente creato'); } catch (error) { showToast(error.message, true); } });
   $('#cancel-form').addEventListener('click', closeDrawer);
 }
