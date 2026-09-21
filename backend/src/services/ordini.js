@@ -1,6 +1,32 @@
 const { db } = require('../db');
 const magazzino = require('./magazzino');
 
+function normalizeCustomerId(value) {
+    const customerId = Number(value);
+
+    if (!Number.isInteger(customerId) || customerId <= 0) {
+        throw new Error('Cliente non valido');
+    }
+
+    return customerId;
+}
+
+async function getCustomerById(value) {
+    const customerId = normalizeCustomerId(value);
+
+    const customer = await db.prepare(`
+        SELECT id
+        FROM CLIENTI
+        WHERE id = ?
+    `).get(customerId);
+
+    if (!customer) {
+        throw new Error('Cliente non trovato');
+    }
+
+    return customer;
+}
+
 async function getAll() {
     return db.prepare(`
         SELECT
@@ -22,7 +48,7 @@ async function getAll() {
 
 async function getById(id) {
     const ordine = await db.prepare(`
-            SELECT
+        SELECT
             o.*,
             MAX(c.nome) AS cliente_nome,
             MAX(c.indirizzo) AS cliente_indirizzo,
@@ -30,12 +56,22 @@ async function getById(id) {
             MAX(c.zona) AS cliente_zona,
             COALESCE(SUM(r.quantita * r.prezzo_applicato), 0) AS totale_ordine
         FROM ORDINI o
-        INNER JOIN CLIENTI c
+
+        LEFT JOIN CLIENTI c
             ON c.id = o.cliente_id
+
         LEFT JOIN RIGHE_ORDINE r
             ON r.ordine_id = o.id
+
         WHERE o.id = ?
-        GROUP BY o.id, c.nome, c.indirizzo, c.localita, c.zona
+
+        GROUP BY
+            o.id,
+            c.nome,
+            c.indirizzo,
+            c.localita,
+            c.zona
+
         ORDER BY o.data DESC
     `).get(id);
 
@@ -50,13 +86,18 @@ async function getById(id) {
             m.categoria AS articolo_categoria,
             s.stato AS stato_riga_nome
         FROM RIGHE_ORDINE r
+
         INNER JOIN ARTICOLI a
             ON a.id = r.articolo_id
+
         INNER JOIN MATERIALI m
             ON m.id = a.materiale
+
         INNER JOIN STATUS_RIGA_ORDINE s
             ON s.id = r.stato_riga
+
         WHERE r.ordine_id = ?
+
         ORDER BY r.id
     `).all(id);
 
@@ -66,17 +107,9 @@ async function getById(id) {
 async function create(data) {
 
     const createOrder = db.transaction(async (ordine) => {
-
-        // Verifica cliente
-        const cliente = await db.prepare(`
-            SELECT id
-            FROM CLIENTI
-            WHERE id = ?
-        `).get(ordine.cliente_id);
-
-        if (!cliente) {
-            throw new Error('Cliente non trovato');
-        }
+        const customerId = normalizeCustomerId(ordine.cliente_id);
+        await getCustomerById(customerId);
+        ordine.cliente_id = customerId;
 
         /*
         * ------------------------------------------------------
@@ -196,7 +229,7 @@ async function update(id, data) {
     const updateOrder = db.transaction(async (ordineId) => {
         const requestedStatus = Number(data.stato);
         const existing = await db.prepare(`
-            SELECT id
+            SELECT id, cliente_id
             FROM ORDINI
             WHERE id = ?
         `).get(ordineId);
@@ -205,15 +238,12 @@ async function update(id, data) {
             return false;
         }
 
-        const customer = await db.prepare(`
-            SELECT id
-            FROM CLIENTI
-            WHERE id = ?
-        `).get(data.cliente_id);
+        const customerId =
+            data.cliente_id === undefined || data.cliente_id === null || data.cliente_id === ''
+                ? normalizeCustomerId(existing.cliente_id)
+                : normalizeCustomerId(data.cliente_id);
 
-        if (!customer) {
-            throw new Error('Cliente non trovato');
-        }
+        await getCustomerById(customerId);
 
          /*
         * ------------------------------------------------------
@@ -277,7 +307,7 @@ async function update(id, data) {
             WHERE id = ?
         `).run(
             data.data,
-            data.cliente_id,
+            customerId,
             requestedStatus,
             typeof data.pagato === 'boolean'
                 ? (data.pagato ? 1 : 2)
@@ -288,10 +318,12 @@ async function update(id, data) {
 
         if (Array.isArray(data.righe)) {
             const existingLines = await db.prepare(`
-                SELECT articolo_id, quantita_consegnata
+                SELECT id, articolo_id, quantita_consegnata
                 FROM RIGHE_ORDINE
                 WHERE ordine_id = ?
             `).all(ordineId);
+
+            const matchedExistingIds = new Set();
 
             await db.prepare(`
                 DELETE FROM RIGHE_ORDINE
@@ -334,14 +366,41 @@ async function update(id, data) {
                     ? 2
                     : (quantitaConsegnata > 0 ? 4 : (line.stato_riga ?? 1));
 
-                const previousDelivered = existingLines
-                    .filter((oldLine) => oldLine.articolo_id === line.articolo_id)
-                    .reduce((total, oldLine) => total + Number(oldLine.quantita_consegnata || 0), 0);
-                const deliveryDelta = quantitaConsegnata - previousDelivered;
-                if (deliveryDelta > 0) {
-                    await magazzino.vendita({ articoloId: line.articolo_id, quantita: deliveryDelta, ordineId, rigaOrdineId: line.id, note: `Consegna ordine "${ordineId}" riga "${line.id}"` });
-                } else if (deliveryDelta < 0) {
-                    await magazzino.resoCliente({ articoloId: line.articolo_id, quantita: -deliveryDelta, ordineId, rigaOrdineId: line.id, note: `Rettifica consegna ordine "${ordineId}" riga "${line.id}"` });
+                /*
+                 * Le righe vengono cancellate e reinserite ad ogni modifica, quindi
+                 * la corrispondenza con la riga precedente va fatta tramite il suo id
+                 * (non tramite articolo_id): due righe con lo stesso articolo, o una
+                 * riga a cui viene cambiato l'articolo, altrimenti si confondono.
+                 */
+                const existingLine = line.id
+                    ? existingLines.find((oldLine) => oldLine.id === Number(line.id))
+                    : null;
+
+                if (existingLine) {
+                    matchedExistingIds.add(existingLine.id);
+
+                    const previousDelivered = Number(existingLine.quantita_consegnata || 0);
+
+                    if (existingLine.articolo_id !== line.articolo_id) {
+                        // Cambio articolo sulla riga: il consegnato precedente torna
+                        // disponibile sul vecchio articolo, quello nuovo è una consegna fresca.
+                        if (previousDelivered > 0) {
+                            await magazzino.resoCliente({ articoloId: existingLine.articolo_id, quantita: previousDelivered, ordineId, note: `Cambio articolo riga ordine "${ordineId}" (ex riga "${existingLine.id}")` });
+                        }
+                        if (quantitaConsegnata > 0) {
+                            await magazzino.vendita({ articoloId: line.articolo_id, quantita: quantitaConsegnata, ordineId, rigaOrdineId: existingLine.id, note: `Consegna ordine "${ordineId}" riga "${existingLine.id}"` });
+                        }
+                    } else {
+                        const deliveryDelta = quantitaConsegnata - previousDelivered;
+                        if (deliveryDelta > 0) {
+                            await magazzino.vendita({ articoloId: line.articolo_id, quantita: deliveryDelta, ordineId, rigaOrdineId: existingLine.id, note: `Consegna ordine "${ordineId}" riga "${existingLine.id}"` });
+                        } else if (deliveryDelta < 0) {
+                            await magazzino.resoCliente({ articoloId: line.articolo_id, quantita: -deliveryDelta, ordineId, note: `Rettifica consegna ordine "${ordineId}" riga "${existingLine.id}"` });
+                        }
+                    }
+                } else if (quantitaConsegnata > 0) {
+                    // Riga nuova: tutta la quantità consegnata è una consegna fresca.
+                    await magazzino.vendita({ articoloId: line.articolo_id, quantita: quantitaConsegnata, ordineId, note: `Consegna ordine "${ordineId}" nuova riga` });
                 }
 
                 await insertLine.run(
@@ -352,6 +411,15 @@ async function update(id, data) {
                     requestedStatus === 2 ? 2 : statoRiga,
                     quantitaConsegnata
                 );
+            }
+
+            // Righe rimosse dall'utente: il consegnato residuo torna disponibile.
+            for (const oldLine of existingLines) {
+                if (matchedExistingIds.has(oldLine.id)) continue;
+                const previousDelivered = Number(oldLine.quantita_consegnata || 0);
+                if (previousDelivered > 0) {
+                    await magazzino.resoCliente({ articoloId: oldLine.articolo_id, quantita: previousDelivered, ordineId, note: `Rimozione riga ordine "${ordineId}" (ex riga "${oldLine.id}")` });
+                }
             }
         }
 

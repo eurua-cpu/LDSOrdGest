@@ -2,7 +2,8 @@ const { db } = require('../db');
 
 async function getAll() {
     return db.prepare(`
-        SELECT 
+        SELECT
+            id,
             nome,
             zona,
             localita,
@@ -16,7 +17,8 @@ async function getAll() {
 
 async function getById(id) {
     return db.prepare(`
-        SELECT             nome,
+        SELECT             id,
+            nome,
             zona,
             localita,
             telefono,
