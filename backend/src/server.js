@@ -46,6 +46,29 @@ app.get('/api/health', (req, res) => {
 
 });
 
+// DEBUG: List users in database (temporary for troubleshooting)
+app.get('/api/debug/users', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, email, nome, cognome, ruolo, attivo, password_hash FROM users ORDER BY id'
+        );
+        res.json({
+            users: result.rows.map(user => ({
+                id: user.id,
+                email: user.email,
+                name: `${user.nome} ${user.cognome}`,
+                role: user.ruolo,
+                active: user.attivo,
+                passwordStatus: user.password_hash
+                    ? (user.password_hash.includes(':') ? 'hashed' : 'plaintext')
+                    : 'null'
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ==============================
 // PROTECTED API
 // ==============================
