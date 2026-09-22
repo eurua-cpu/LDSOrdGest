@@ -12,9 +12,9 @@ const imports = [
     ['status_riga_ordine.csv', 'STATUS_RIGA_ORDINE', ['id', 'stato', 'ordinamento_stato']],
     ['materiali.csv', 'MATERIALI', ['id', 'codice', 'descrizione', 'um_base', 'categoria']],
     ['clienti.csv', 'CLIENTI', ['id', 'nome', 'indirizzo', 'localita', 'telefono', 'zona', 'note']],
-    ['articoli.csv', 'ARTICOLI', ['id', 'codice', 'descrizione', 'materiale', 'um_vendita', 'um_base_x_um', 'prezzo_acquisto', 'prezzo_vendita']],
-    ['ordini.csv', 'ORDINI', ['id', 'data', 'cliente_id', 'stato', 'pagato', 'note_ordine']],
-    ['righe_ordine.csv', 'RIGHE_ORDINE', ['id', 'ordine_id', 'riga_ordine', 'articolo_id', 'quantita', 'prezzo_applicato', 'stato_riga', 'data_consegna', 'note_riga_ordine']]
+    ['articoli.csv', 'ARTICOLI', ['id', 'codice', 'descrizione', 'materiale', 'um_vendita', 'um_base_x_um', 'prezzo_acquisto', 'prezzo_vendita']]
+    /*['ordini.csv', 'ORDINI', ['id', 'data', 'cliente_id', 'stato', 'pagato', 'note_ordine']],
+    ['righe_ordine.csv', 'RIGHE_ORDINE', ['id', 'ordine_id', 'riga_ordine', 'articolo_id', 'quantita', 'prezzo_applicato', 'stato_riga', 'data_consegna', 'note_riga_ordine']]*/
 ];
 
 function parseCsv(fileName) {
