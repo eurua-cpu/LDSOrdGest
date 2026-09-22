@@ -7,6 +7,7 @@ const {
     requireAuth
 } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
+const { hashPassword } = require('./services/auth');
 
 const clientiRoutes = require('./routes/clienti');
 const articoliRoutes = require('./routes/articoli');
@@ -44,6 +45,38 @@ app.get('/api/health', (req, res) => {
         status: 'OK'
     });
 
+});
+
+// DEBUG: Create admin user (temporary for troubleshooting)
+app.post('/api/debug/create-admin', async (req, res) => {
+    try {
+        const { email, password, nome, cognome } = req.body;
+
+        if (!email || !password || !nome || !cognome) {
+            return res.status(400).json({ error: 'email, password, nome, cognome sono obbligatori' });
+        }
+
+        const passwordHash = await hashPassword(password);
+
+        const result = await pool.query(
+            `
+            INSERT INTO users (email, password_hash, nome, cognome, ruolo, attivo)
+            VALUES ($1, $2, $3, $4, 'ADMIN', TRUE)
+            ON CONFLICT (email) DO UPDATE SET
+                password_hash = EXCLUDED.password_hash,
+                nome = EXCLUDED.nome,
+                cognome = EXCLUDED.cognome,
+                ruolo = EXCLUDED.ruolo,
+                attivo = EXCLUDED.attivo
+            RETURNING id, email, nome, cognome, ruolo
+            `,
+            [email.trim().toLowerCase(), passwordHash, nome.trim(), cognome.trim()]
+        );
+
+        res.json({ success: true, user: result.rows[0] });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // DEBUG: List users in database (temporary for troubleshooting)
