@@ -7,7 +7,6 @@ const {
     requireAuth
 } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
-const { hashPassword } = require('./services/auth');
 
 const clientiRoutes = require('./routes/clienti');
 const articoliRoutes = require('./routes/articoli');
@@ -45,78 +44,6 @@ app.get('/api/health', (req, res) => {
         status: 'OK'
     });
 
-});
-
-// DEBUG: Create admin user (temporary for troubleshooting)
-app.post('/api/debug/create-admin', async (req, res) => {
-    try {
-        const { email, password, nome, cognome } = req.body;
-
-        if (!email || !password || !nome || !cognome) {
-            return res.status(400).json({ error: 'email, password, nome, cognome sono obbligatori' });
-        }
-
-        const passwordHash = await hashPassword(password);
-        const normalizedEmail = email.trim().toLowerCase();
-
-        const existing = await pool.query(
-            'SELECT id FROM users WHERE LOWER(email) = $1',
-            [normalizedEmail]
-        );
-
-        let result;
-        if (existing.rows.length > 0) {
-            result = await pool.query(
-                `
-                UPDATE users SET
-                    password_hash = $1,
-                    nome = $2,
-                    cognome = $3,
-                    ruolo = 'ADMIN',
-                    attivo = TRUE
-                WHERE id = $4
-                RETURNING id, email, nome, cognome, ruolo
-                `,
-                [passwordHash, nome.trim(), cognome.trim(), existing.rows[0].id]
-            );
-        } else {
-            result = await pool.query(
-                `
-                INSERT INTO users (email, password_hash, nome, cognome, ruolo, attivo)
-                VALUES ($1, $2, $3, $4, 'ADMIN', TRUE)
-                RETURNING id, email, nome, cognome, ruolo
-                `,
-                [normalizedEmail, passwordHash, nome.trim(), cognome.trim()]
-            );
-        }
-
-        res.json({ success: true, user: result.rows[0] });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// DEBUG: List users in database (temporary for troubleshooting)
-app.get('/api/debug/users', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'SELECT id, email, nome, cognome, ruolo, attivo, password_hash FROM users ORDER BY id'
-        );
-        res.json({
-            users: result.rows.map(user => ({
-                id: user.id,
-                email: user.email,
-                name: `${user.nome} ${user.cognome}`,
-                role: user.ruolo,
-                active: user.attivo,
-                passwordStatus: user.password_hash
-                    ? (user.password_hash.includes(':') ? 'hashed' : 'plaintext')
-                    : 'null'
-            }))
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
 });
 
 // ==============================
