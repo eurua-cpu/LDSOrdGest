@@ -57,21 +57,38 @@ app.post('/api/debug/create-admin', async (req, res) => {
         }
 
         const passwordHash = await hashPassword(password);
+        const normalizedEmail = email.trim().toLowerCase();
 
-        const result = await pool.query(
-            `
-            INSERT INTO users (email, password_hash, nome, cognome, ruolo, attivo)
-            VALUES ($1, $2, $3, $4, 'ADMIN', TRUE)
-            ON CONFLICT (email) DO UPDATE SET
-                password_hash = EXCLUDED.password_hash,
-                nome = EXCLUDED.nome,
-                cognome = EXCLUDED.cognome,
-                ruolo = EXCLUDED.ruolo,
-                attivo = EXCLUDED.attivo
-            RETURNING id, email, nome, cognome, ruolo
-            `,
-            [email.trim().toLowerCase(), passwordHash, nome.trim(), cognome.trim()]
+        const existing = await pool.query(
+            'SELECT id FROM users WHERE LOWER(email) = $1',
+            [normalizedEmail]
         );
+
+        let result;
+        if (existing.rows.length > 0) {
+            result = await pool.query(
+                `
+                UPDATE users SET
+                    password_hash = $1,
+                    nome = $2,
+                    cognome = $3,
+                    ruolo = 'ADMIN',
+                    attivo = TRUE
+                WHERE id = $4
+                RETURNING id, email, nome, cognome, ruolo
+                `,
+                [passwordHash, nome.trim(), cognome.trim(), existing.rows[0].id]
+            );
+        } else {
+            result = await pool.query(
+                `
+                INSERT INTO users (email, password_hash, nome, cognome, ruolo, attivo)
+                VALUES ($1, $2, $3, $4, 'ADMIN', TRUE)
+                RETURNING id, email, nome, cognome, ruolo
+                `,
+                [normalizedEmail, passwordHash, nome.trim(), cognome.trim()]
+            );
+        }
 
         res.json({ success: true, user: result.rows[0] });
     } catch (error) {
