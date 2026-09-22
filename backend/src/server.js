@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { pool } = require('./db');
+const { migratePlainPasswords } = require('./migrations/migrate-plain-passwords');
 
 const {
     requireAuth
@@ -67,6 +68,14 @@ app.use('/api/materiali', materialiRoutes);
 
 const PORT = process.env.PORT || 8080;
 
-app.listen(PORT, () => {
-    console.log(`Server avviato su http://localhost:${PORT}`);
-});
+(async () => {
+    try {
+        await migratePlainPasswords(pool);
+    } catch (error) {
+        console.error('Migration failed:', error);
+    }
+
+    app.listen(PORT, () => {
+        console.log(`Server avviato su http://localhost:${PORT}`);
+    });
+})();
