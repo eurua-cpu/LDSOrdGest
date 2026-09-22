@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { pool } = require('./db');
+const { migratePlainPasswords } = require('./migrations/migrate-plain-passwords');
 
 const {
     requireAuth
