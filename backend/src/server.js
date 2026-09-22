@@ -7,7 +7,6 @@ const {
     requireAuth
 } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
-const { migratePlainPasswords } = require('./migrations/migrate-plain-passwords');
 
 const clientiRoutes = require('./routes/clienti');
 const articoliRoutes = require('./routes/articoli');
