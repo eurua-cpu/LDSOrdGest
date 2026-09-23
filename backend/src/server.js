@@ -7,7 +7,6 @@ const {
     requireAuth
 } = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
-const { hashPassword } = require('./services/auth');
 
 const clientiRoutes = require('./routes/clienti');
 const articoliRoutes = require('./routes/articoli');
@@ -45,34 +44,6 @@ app.get('/api/health', (req, res) => {
         status: 'OK'
     });
 
-});
-
-// TEMP DEBUG: Create admin user
-app.post('/api/debug/create-admin', async (req, res) => {
-    try {
-        const { email, password, nome, cognome } = req.body;
-        if (!email || !password || !nome || !cognome) {
-            return res.status(400).json({ error: 'email, password, nome, cognome required' });
-        }
-        const passwordHash = await hashPassword(password);
-        const normalizedEmail = email.trim().toLowerCase();
-        const existing = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [normalizedEmail]);
-        let result;
-        if (existing.rows.length > 0) {
-            result = await pool.query(
-                'UPDATE users SET password_hash = $1, nome = $2, cognome = $3, ruolo = $4, attivo = TRUE WHERE id = $5 RETURNING id, email, nome, cognome, ruolo',
-                [passwordHash, nome.trim(), cognome.trim(), 'ADMIN', existing.rows[0].id]
-            );
-        } else {
-            result = await pool.query(
-                'INSERT INTO users (email, password_hash, nome, cognome, ruolo, attivo) VALUES ($1, $2, $3, $4, $5, TRUE) RETURNING id, email, nome, cognome, ruolo',
-                [normalizedEmail, passwordHash, nome.trim(), cognome.trim(), 'ADMIN']
-            );
-        }
-        res.json({ success: true, user: result.rows[0] });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
 });
 
 // ==============================
