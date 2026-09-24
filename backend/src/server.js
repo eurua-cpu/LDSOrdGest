@@ -46,6 +46,23 @@ app.get('/api/health', (req, res) => {
 
 });
 
+// TEMP DEBUG: check current row counts before a migration
+app.get('/api/debug/counts', async (req, res) => {
+    try {
+        const tables = ['ORDINI', 'RIGHE_ORDINE', 'ARTICOLI', 'CLIENTI'];
+        const out = {};
+        for (const table of tables) {
+            const result = await pool.query(`SELECT COUNT(*) c, MAX(id) m FROM ${table}`);
+            out[table] = { count: Number(result.rows[0].c), maxId: result.rows[0].m };
+        }
+        const recentOrders = await pool.query('SELECT id, data, cliente_id, note_ordine FROM ORDINI ORDER BY id DESC LIMIT 5');
+        out.recentOrders = recentOrders.rows;
+        res.json(out);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ==============================
 // PROTECTED API
 // ==============================
