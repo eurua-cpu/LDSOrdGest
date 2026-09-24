@@ -57,6 +57,8 @@ app.get('/api/debug/counts', async (req, res) => {
         }
         const recentOrders = await pool.query('SELECT id, data, cliente_id, note_ordine FROM ORDINI ORDER BY id DESC LIMIT 5');
         out.recentOrders = recentOrders.rows;
+        const articoliHigh = await pool.query('SELECT id, codice, descrizione, prezzo_vendita FROM ARTICOLI WHERE id > 29 ORDER BY id');
+        out.articoliHigh = articoliHigh.rows;
         res.json(out);
     } catch (error) {
         res.status(500).json({ error: error.message });
