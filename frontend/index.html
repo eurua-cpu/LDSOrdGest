@@ -11,6 +11,11 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
+  <link type="image/png" sizes="16x16" rel="icon" href="/icons8-legna da ardere-hands-16.png">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link type="image/png" sizes="16x16" rel="icon" href="/icons8-legna da ardere-hands-16.png">
+  <link rel="apple-touch-icon" href="/icons8-legna da ardere-hands-16.png">
 </head>
 
 <body>
@@ -19,7 +24,7 @@
     <div class="login-card">
 
       <div class="login-brand">
-        <span class="brand-mark">L</span>
+        <span class="brand-mark"><img width="60" height="60" src="https://img.icons8.com/hands/100/firewood.png" alt="firewood"/></span>
         <div>
           <strong>OrdGest</strong>
           <small>control room</small>
@@ -75,19 +80,19 @@
 
   <div class="app-shell hidden" id="app-shell">
     <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">L</span>
+      <div class="brand"><span class="brand-mark"><img width="40" height="40" src="https://img.icons8.com/hands/100/firewood.png" alt="firewood"/></span>
         <div><strong>OrdGest</strong><small>control room</small></div>
       </div>
       <div class="workspace-label">GESTIONE</div>
       <nav class="nav" aria-label="Navigazione principale">
-        <button class="nav-item active" data-view="overview"><span class="nav-icon">⌂</span>Panoramica</button>
-        <button class="nav-item" data-view="orders"><span class="nav-icon">▤</span>Ordini <b
+        <button class="nav-item active" data-view="overview"><span class="nav-icon"><img width="20" height="20" src="https://img.icons8.com/dotty/80/shop.png" alt="shop"/></span>Panoramica</button>
+        <button class="nav-item" data-view="orders"><span class="nav-icon"><img width="20" height="20" src="https://img.icons8.com/dotty/80/shopping-cart.png" alt="shopping-cart"/></span>Ordini <b
             id="order-nav-count">39</b></button>
-        <button class="nav-item" data-view="customers"><span class="nav-icon">♧</span>Clienti</button>
-        <button class="nav-item" data-view="products"><span class="nav-icon">◈</span>Articoli</button>
-        <button class="nav-item" data-view="warehouse"><span class="nav-icon">▥</span>Magazzino</button>
+        <button class="nav-item" data-view="customers"><span class="nav-icon"><img width="20" height="20" src="https://img.icons8.com/ios/50/groups.png" alt="groups"/></span>Clienti</button>
+        <button class="nav-item" data-view="products"><span class="nav-icon"><img width="20" height="20" src="https://img.icons8.com/external-others-pike-picture/50/external-Wooden-Insulation-insulation-others-pike-picture-2.png" alt="external-Wooden-Insulation-insulation-others-pike-picture-2"/></span>Articoli</button>
+        <button class="nav-item" data-view="warehouse"><span class="nav-icon"><img width="20" height="20" src="https://img.icons8.com/dotty/80/warehouse.png" alt="Lumber Icon"/></span>Magazzino</button>
       </nav>
-      <div class="sidebar-footer"><span class="status-dot"></span><span>Database locale</span><small>SQLite ·
+      <div class="sidebar-footer"><span class="status-dot"></span><span>Postgres DB</span><small>Railway ·
           online</small></div>
     </aside>
 
@@ -155,12 +160,12 @@
           <article class="metric-card accent-orange">
             <div class="metric-label">Clienti <span>↗</span></div><strong
               id="metric-customers">—</strong><small>anagrafica attiva</small>
-            <div class="metric-trend orange">+12% <small>vs mese scorso</small></div>
+            <!--<div class="metric-trend orange">+12% <small>vs mese scorso</small></div>-->
           </article>
           <article class="metric-card accent-blue">
             <div class="metric-label">Articoli <span>↗</span></div><strong
               id="metric-products">—</strong><small>catalogo disponibile</small>
-            <div class="metric-trend blue">+4 <small>nuovi articoli</small></div>
+            <!-- <div class="metric-trend blue">+4 <small>nuovi articoli</small></div> -->
           </article>
           <article class="metric-card accent-ink">
             <div class="metric-label">Da evadere <span>↗</span></div><strong id="metric-pending">—</strong><small>ordini
@@ -196,9 +201,9 @@
             <h2>Azioni frequenti</h2><button class="quick-action" data-action="new-order"><span
                 class="quick-icon teal">＋</span><span><strong>Inserisci ordine</strong><small>Registra una nuova
                   commessa</small></span><b>→</b></button><button class="quick-action" data-action="new-customer"><span
-                class="quick-icon orange">♧</span><span><strong>Aggiungi cliente</strong><small>Nuova anagrafica
+                class="quick-icon orange"><img width="20" height="20" src="https://img.icons8.com/ios/50/groups.png" alt="groups"/></span><span><strong>Aggiungi cliente</strong><small>Nuova anagrafica
                   cliente</small></span><b>→</b></button><button class="quick-action" data-view-target="products"><span
-                class="quick-icon blue">◈</span><span><strong>Catalogo articoli</strong><small>Consulta disponibilità e
+                class="quick-icon blue"><img width="20" height="20" src="https://img.icons8.com/external-others-pike-picture/50/external-Wooden-Insulation-insulation-others-pike-picture-2.png" alt="external-Wooden-Insulation-insulation-others-pike-picture-2"/></span><span><strong>Catalogo articoli</strong><small>Consulta disponibilità e
                   prezzi</small></span><b>→</b></button>
           </section>
         </div>
