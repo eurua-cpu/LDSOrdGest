@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const { pool } = require('./db');
 const { migratePlainPasswords } = require('./migrations/migrate-plain-passwords');
 
@@ -65,6 +66,34 @@ app.get('/api/debug/counts', async (req, res) => {
         res.json(out);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// TEMP DEBUG: run the ordini/righe_ordine SQL import files against this database
+app.post('/api/debug/run-ordini-import', async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const sqlDir = path.join(__dirname, '..', 'scripts', 'sql');
+        const ordiniSql = fs.readFileSync(path.join(sqlDir, '02_ordini.sql'), 'utf8');
+        const righeSql = fs.readFileSync(path.join(sqlDir, '03_righe_ordine_pg.sql'), 'utf8');
+
+        await client.query('BEGIN');
+        await client.query(ordiniSql);
+        await client.query(righeSql);
+        await client.query('COMMIT');
+
+        const ordiniCount = await client.query('SELECT COUNT(*) c FROM ordini');
+        const righeCount = await client.query('SELECT COUNT(*) c FROM righe_ordine');
+        res.json({
+            success: true,
+            ordini: Number(ordiniCount.rows[0].c),
+            righeOrdine: Number(righeCount.rows[0].c)
+        });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: error.message });
+    } finally {
+        client.release();
     }
 });
 
