@@ -76,7 +76,7 @@ app.post('/api/debug/run-ordini-import', async (req, res) => {
     const client = await pool.connect();
     try {
         const sqlDir = path.join(__dirname, '..', 'scripts', 'sql');
-        const ordiniSql = fs.readFileSync(path.join(sqlDir, '02_ordini.sql'), 'utf8');
+        const ordiniSql = fs.readFileSync(path.join(sqlDir, '02_ordini_pg.sql'), 'utf8');
         const righeSql = fs.readFileSync(path.join(sqlDir, '03_righe_ordine_pg.sql'), 'utf8');
 
         await client.query('BEGIN');

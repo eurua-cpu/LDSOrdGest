@@ -83,3 +83,31 @@ UPDATE sqlite_sequence SET seq = (SELECT MAX(id) FROM RIGHE_ORDINE) WHERE name =
 fs.writeFileSync(path.join(OUT_DIR, '02_ordini.sql'), ordiniOut);
 fs.writeFileSync(path.join(OUT_DIR, '03_righe_ordine.sql'), righeOut);
 console.log(`Scritti ${ordini.length} ordini e ${righe.length} righe ordine in backend/scripts/sql/`);
+
+// Versione per Railway: esclude i 33 ordini con cliente_id non risolvibile
+// (id cliente rinumerati su Railway dopo la migrazione iniziale; utente ha scelto di saltarli).
+const CLIENTI_NON_RISOLVIBILI = new Set([49, 54, 195, 216, 222, 223, 226, 284, 314, 319, 360, 411, 492, 501, 506, 538, 550, 559, 568]);
+const excludedOrderIds = new Set(ordini.filter(row => CLIENTI_NON_RISOLVIBILI.has(Number(row.cliente_id))).map(row => row.id));
+
+const ordiniSqlPg = ordini.filter(row => !excludedOrderIds.has(row.id)).map((row, i) => ordiniSql[ordini.indexOf(row)]);
+const righeSqlPg = righe.filter(row => !excludedOrderIds.has(row.id_ordine)).map(row => righeSql[righe.indexOf(row)]);
+
+const ordiniPgOut = `-- svuota e reimporta da zero (decisione utente), escludendo ${excludedOrderIds.size} ordini
+-- con cliente_id non risolvibile su Railway (id cliente rinumerati dopo la migrazione)
+DELETE FROM righe_ordine;
+DELETE FROM ordini;
+
+INSERT INTO ordini (id, data, cliente_id, stato, pagato, note_ordine) VALUES
+${ordiniSqlPg.join(',\n')};
+`;
+
+const righeOrdinePgOut = `INSERT INTO righe_ordine (id, ordine_id, riga_ordine, articolo_id, quantita, prezzo_applicato, stato_riga, data_consegna, note_riga_ordine) VALUES
+${righeSqlPg.join(',\n')};
+
+SELECT setval(pg_get_serial_sequence('ordini','id'), (SELECT MAX(id) FROM ordini));
+SELECT setval(pg_get_serial_sequence('righe_ordine','id'), (SELECT MAX(id) FROM righe_ordine));
+`;
+
+fs.writeFileSync(path.join(OUT_DIR, '02_ordini_pg.sql'), ordiniPgOut);
+fs.writeFileSync(path.join(OUT_DIR, '03_righe_ordine_pg.sql'), righeOrdinePgOut);
+console.log(`Railway: esclusi ${excludedOrderIds.size} ordini (${ordiniSqlPg.length} ordini, ${righeSqlPg.length} righe ordine da importare)`);
