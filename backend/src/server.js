@@ -63,8 +63,8 @@ app.get('/api/debug/counts', async (req, res) => {
         const materialiIds = [...new Set(articoliHigh.rows.map(r => r.materiale))];
         const materialiHigh = await pool.query('SELECT * FROM MATERIALI WHERE id = ANY($1) ORDER BY id', [materialiIds]);
         out.materialiHigh = materialiHigh.rows;
-        const allClienti = await pool.query('SELECT id FROM CLIENTI ORDER BY id');
-        out.clienteIds = allClienti.rows.map(r => r.id);
+        const allClienti = await pool.query('SELECT id, nome, localita FROM CLIENTI ORDER BY id');
+        out.clienti = allClienti.rows;
         res.json(out);
     } catch (error) {
         res.status(500).json({ error: error.message });
