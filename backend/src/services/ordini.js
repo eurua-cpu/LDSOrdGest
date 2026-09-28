@@ -54,6 +54,7 @@ async function getById(id) {
             MAX(c.indirizzo) AS cliente_indirizzo,
             MAX(c.localita) AS cliente_localita,
             MAX(c.zona) AS cliente_zona,
+            MAX(c.telefono) AS cliente_telefono,
             COALESCE(SUM(r.quantita * r.prezzo_applicato), 0) AS totale_ordine
         FROM ORDINI o
 

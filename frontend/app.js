@@ -241,9 +241,31 @@ function renderOrders() {
     const zones = [...new Set(state.orders.map((order) => order.cliente_zona).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'it'));
     zoneFilter.innerHTML = `<option value="all">Tutte le zone</option>${zones.map((zone) => `<option value="${escapeHtml(zone)}">${escapeHtml(zone)}</option>`).join('')}`;
     zoneFilter.value = zones.includes(selectedZone) ? selectedZone : 'all';
+    // =========================
+    // FILTRO PAGAMENTO
+    // =========================
+    let paymentFilter = $('#payment-filter');
+
+    if (!paymentFilter) {
+        paymentFilter = document.createElement('select');
+        paymentFilter.id = 'payment-filter';
+
+        paymentFilter.innerHTML = `
+            <option value="all">Tutti i pagamenti</option>
+            <option value="1">Pagato</option>
+            <option value="2">Non pagato</option>
+            <option value="3">Parzialmente pagato</option>
+        `;
+
+        paymentFilter.addEventListener('change', renderOrders);
+
+        toolbar.appendChild(paymentFilter);
+    }
+
     const query = ($('#order-search')?.value || '').toLowerCase();
     const filter = $('#order-filter')?.value || 'all';
-    const rows = state.orders.filter((order) => (!query || String(order.id).includes(query) || (order.cliente_nome || customerName(order.cliente_id)).toLowerCase().includes(query) || (order.cliente_zona || '').toLowerCase().includes(query)) && (filter === 'all' || String(order.stato) === filter) && (zoneFilter.value === 'all' || order.cliente_zona === zoneFilter.value));
+    const payment = paymentFilter.value || 'all';
+    const rows = state.orders.filter((order) => (!query || String(order.id).includes(query) || (order.cliente_nome || customerName(order.cliente_id)).toLowerCase().includes(query) || (order.cliente_zona || '').toLowerCase().includes(query)) && (filter === 'all' || String(order.stato) === filter) && (zoneFilter.value === 'all' || order.cliente_zona === zoneFilter.value) && (payment === 'all' || String(order.pagato) === payment));
     if ($('#order-filter') && $('#order-filter').options[1]?.textContent === 'Aperto') $('#order-filter').innerHTML = '<option value="all">Tutti gli stati</option><option value="1">Impegnato</option><option value="4">Parzialmente consegnato</option><option value="2">Consegnato</option><option value="3">Annullato</option>';
     $('#orders-table').closest('table').querySelector('thead tr').innerHTML = '<th>Numero</th><th>Cliente</th><th>Zona</th><th>Data</th><th>Totale</th><th>Pagamento</th><th>Stato</th><th></th>';
     $('#recent-orders').closest('table').querySelector('thead tr').innerHTML = '<th>Ordine</th><th>Cliente</th><th>Zona</th><th>Data</th><th>Totale</th><th>Stato</th><th></th>';
@@ -1036,7 +1058,25 @@ function orderForm(existingOrder = null, copying = false) {
     });
 }
 
-async function showOrder(id) { try { const order = await api(`ordini/${id}`); const total = Number(order.totale_ordine) || 0; openDrawer(`<p class="eyebrow">ORDINE #${String(order.id).padStart(4, '0')}</p><h2>${escapeHtml(order.cliente_nome)}</h2><p class="drawer-subtitle">${formatDate(order.data)} · ${statusBadge(order.stato)}</p><div class="customer-details"><div><span>Indirizzo</span><strong>${escapeHtml(order.cliente_indirizzo || '—')}</strong></div><div><span>Località</span><strong>${escapeHtml(order.cliente_localita || '—')}</strong></div><div><span>Zona</span><strong>${escapeHtml(order.cliente_zona || '—')}</strong></div></div><div class="detail-list">${(order.righe || []).map((line) => `<div class="detail-line"><div><strong>${escapeHtml(line.articolo_codice)}</strong><small>${escapeHtml(line.articolo_categoria || '')}</small></div><span>${line.quantita} × ${formatMoney(line.prezzo_applicato)}<small>${lineStatusBadge(line.stato_riga)}</small></span></div>`).join('') || '<p class="empty">Nessuna riga.</p>'}</div><div class="order-total"><span>Totale ordine</span><strong>${formatMoney(total)}</strong></div><div class="form-actions"><button class="secondary-button" id="close-detail">Chiudi</button><button class="primary-button" id="edit-order">Modifica ordine</button><button class="secondary-button" id="copy-order">Copia ordine</button></div>`); $('#close-detail').addEventListener('click', closeDrawer); $('#edit-order').addEventListener('click', () => orderForm(order)); $('#copy-order').addEventListener('click', () => copyOrder(order.id)); } catch (error) { showToast(error.message, true); } }
+async function showOrder(id) { try { const order = await api(`ordini/${id}`); const total = Number(order.totale_ordine) || 0; openDrawer(
+    `<p class="eyebrow">ORDINE #${String(order.id).padStart(4, '0')}</p>
+    <h2>${escapeHtml(order.cliente_nome)}</h2>
+    <p class="drawer-subtitle">${formatDate(order.data)} · ${statusBadge(order.stato)}</p>
+    <div class="customer-details">
+    <div><span>Indirizzo</span>
+    <strong>${escapeHtml(order.cliente_indirizzo || '—')}</strong>
+    </div>
+    <div><span>Località</span>
+    <strong>${escapeHtml(order.cliente_localita || '—')}</strong></div>
+    <div><span>Zona</span><strong>${escapeHtml(order.cliente_zona || '—')}</strong></div>
+    <div><span>Telefono</span>
+    <strong>${escapeHtml(order.cliente_telefono || '—')}</strong></div>
+    <div><span>Note</span>
+    <strong>${escapeHtml(order.note_ordine || '—')}</strong>
+    </div>
+    </div>
+    <div class="detail-list">
+    ${(order.righe || []).map((line) => `<div class="detail-line"><div><strong>${escapeHtml(line.articolo_codice)}</strong><small>${escapeHtml(line.articolo_categoria || '')}</small></div><span>${line.quantita} × ${formatMoney(line.prezzo_applicato)}<small>${lineStatusBadge(line.stato_riga)}</small></span></div>`).join('') || '<p class="empty">Nessuna riga.</p>'}</div><div class="order-total"><span>Totale ordine</span><strong>${formatMoney(total)}</strong></div><div class="form-actions"><button class="secondary-button" id="close-detail">Chiudi</button><button class="primary-button" id="edit-order">Modifica ordine</button><button class="secondary-button" id="copy-order">Copia ordine</button></div>`); $('#close-detail').addEventListener('click', closeDrawer); $('#edit-order').addEventListener('click', () => orderForm(order)); $('#copy-order').addEventListener('click', () => copyOrder(order.id)); } catch (error) { showToast(error.message, true); } }
 
 async function loadWarehouse() { const [articles, materials, movements] = await Promise.all([api('magazzino'), api('magazzino/materiali'), api('movimenti')]); state.warehouse = { articles, materials, movements }; renderWarehouse(); renderMovements(); }
 async function loadData() { try { const [orders, customers, products] = await Promise.all([api('ordini'), api('clienti'), api('articoli')]); state.orders = orders; state.customers = customers; state.products = products; state.materials = await api('materiali').catch(() => []); state.units = await api('um').catch(() => []); await loadWarehouse(); renderMetrics(); renderOrders(); renderCustomers(); renderProducts(); } catch (error) { showToast(`Impossibile caricare i dati: ${error.message}`, true); } }
