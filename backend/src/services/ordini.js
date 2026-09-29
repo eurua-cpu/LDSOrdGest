@@ -28,7 +28,7 @@ async function getCustomerById(value) {
 }
 
 async function getAll() {
-    return db.prepare(`
+    /*return db.prepare(`
         SELECT
             o.*,
             MAX(c.nome) AS cliente_nome,
@@ -43,11 +43,61 @@ async function getAll() {
             ON r.ordine_id = o.id
         GROUP BY o.id, c.nome, c.indirizzo, c.localita, c.zona
         ORDER BY o.data DESC, o.id DESC
+    `).all();*/
+    const order = await db.prepare(`
+        SELECT
+            o.*,
+            MAX(c.nome) AS cliente_nome,
+            MAX(c.indirizzo) AS cliente_indirizzo,
+            MAX(c.localita) AS cliente_localita,
+            MAX(c.zona) AS cliente_zona,
+            MAX(c.telefono) AS cliente_telefono,
+            COALESCE(SUM(r.quantita * r.prezzo_applicato), 0) AS totale_ordine
+        FROM ORDINI o
+
+        LEFT JOIN CLIENTI c
+            ON c.id = o.cliente_id
+
+        LEFT JOIN RIGHE_ORDINE r
+            ON r.ordine_id = o.id
+
+        GROUP BY
+            o.id,
+            c.nome,
+            c.indirizzo,
+            c.localita,
+            c.zona
+
+        ORDER BY o.data DESC, o.id DESC
+    `).all();
+
+    if (!order) {
+        return null;
+    }
+
+    order.righe = await db.prepare(`
+        SELECT
+            r.*,
+            a.codice AS articolo_codice,
+            m.categoria AS articolo_categoria,
+            s.stato AS stato_riga_nome
+        FROM RIGHE_ORDINE r
+
+        INNER JOIN ARTICOLI a
+            ON a.id = r.articolo_id
+
+        INNER JOIN MATERIALI m
+            ON m.id = a.materiale
+
+        INNER JOIN STATUS_RIGA_ORDINE s
+            ON s.id = r.stato_riga
+
+        ORDER BY r.id
     `).all();
 }
 
 async function getById(id) {
-    const ordine = await db.prepare(`
+    const ordini = await db.prepare(`
         SELECT
             o.*,
             MAX(c.nome) AS cliente_nome,
@@ -102,7 +152,7 @@ async function getById(id) {
         ORDER BY r.id
     `).all(id);
 
-    return ordine;
+    return ordini;
 }
 
 async function create(data) {
