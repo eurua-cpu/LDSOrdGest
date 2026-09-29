@@ -28,7 +28,7 @@ async function getCustomerById(value) {
 }
 
 async function getAll() {
-    /*return db.prepare(`
+    return db.prepare(`
         SELECT
             o.*,
             MAX(c.nome) AS cliente_nome,
@@ -43,8 +43,8 @@ async function getAll() {
             ON r.ordine_id = o.id
         GROUP BY o.id, c.nome, c.indirizzo, c.localita, c.zona
         ORDER BY o.data DESC, o.id DESC
-    `).all();*/
-    const order = await db.prepare(`
+    `).all();
+    /*const order = await db.prepare(`
         SELECT
             o.*,
             MAX(c.nome) AS cliente_nome,
@@ -93,7 +93,7 @@ async function getAll() {
             ON s.id = r.stato_riga
 
         ORDER BY r.id
-    `).all();
+    `).all();*/
 }
 
 async function getById(id) {
