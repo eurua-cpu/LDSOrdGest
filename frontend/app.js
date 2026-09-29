@@ -979,6 +979,7 @@ function orderForm(existingOrder = null, copying = false) {
     customerSuggestions.addEventListener('click', (event) => {
         const suggestion = event.target.closest('.suggestion-item');
         if (suggestion) {
+            event.stopPropagation();
             const customerId = Number(
                 suggestion.dataset.customerId
             );
