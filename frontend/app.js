@@ -402,7 +402,63 @@ function copyCustomer(id) {
 
 function customerForm(customer = {}) {
     const editing = Boolean(customer.id);
-    openDrawer(`<p class="eyebrow">ANAGRAFICA CLIENTE</p><h2>${editing ? 'Modifica cliente' : 'Nuovo cliente'}</h2><p class="drawer-subtitle">Completa i dati essenziali del contatto.</p><form id="customer-form" data-id="${customer.id || ''}"><div class="form-grid"><div class="field full"><label>Nome / Ragione sociale *</label><input name="nome" required value="${escapeHtml(customer.nome)}"></div><div class="field full"><label>Indirizzo</label><input name="indirizzo" value="${escapeHtml(customer.indirizzo)}"></div><div class="field"><label>Località</label><input name="localita" value="${escapeHtml(customer.localita)}"></div><div class="field"><label>Telefono</label><input name="telefono" value="${escapeHtml(customer.telefono)}"></div><div class="field"><label>Zona</label><input name="zona" value="${escapeHtml(customer.zona)}"></div><div class="field full"><label>Note</label><textarea name="note">${escapeHtml(customer.note)}</textarea></div></div><div class="form-actions"><button type="button" class="secondary-button" id="cancel-form">Annulla</button><button class="primary-button">${editing ? 'Salva modifiche' : 'Crea cliente'}</button></div></form>`);
+    const existingZones = [...new Set(state.customers.map(c => c.zona).filter(z => z))].sort();
+    openDrawer(`<p class="eyebrow">ANAGRAFICA CLIENTE</p><h2>${editing ? 'Modifica cliente' : 'Nuovo cliente'}</h2><p class="drawer-subtitle">Completa i dati essenziali del contatto.</p><form id="customer-form" data-id="${customer.id || ''}"><div class="form-grid"><div class="field full"><label>Nome / Ragione sociale *</label><input name="nome" required value="${escapeHtml(customer.nome)}"></div><div class="field full"><label>Indirizzo</label><input name="indirizzo" value="${escapeHtml(customer.indirizzo)}"></div><div class="field"><label>Località</label><input name="localita" value="${escapeHtml(customer.localita)}"></div><div class="field"><label>Telefono</label><input name="telefono" value="${escapeHtml(customer.telefono)}"></div><div class="field"><label>Zona</label><div class="zone-search-wrapper"><input type="text" id="zone-search-input" placeholder="Digita zona..." autocomplete="off" value="${escapeHtml(customer.zona)}"><input type="hidden" name="zona" id="zone-value-hidden" value="${escapeHtml(customer.zona)}"><div id="zone-suggestions" class="zone-suggestions hidden"></div></div></div><div class="field full"><label>Note</label><textarea name="note">${escapeHtml(customer.note)}</textarea></div></div><div class="form-actions"><button type="button" class="secondary-button" id="cancel-form">Annulla</button><button class="primary-button">${editing ? 'Salva modifiche' : 'Crea cliente'}</button></div></form>`);
+
+    const zoneSearchInput = document.querySelector('#zone-search-input');
+    const zoneValueHidden = document.querySelector('#zone-value-hidden');
+    const zoneSuggestions = document.querySelector('#zone-suggestions');
+
+    const renderZoneSuggestions = (query = "") => {
+        const filtered = existingZones.filter((zone) =>
+            zone.toLowerCase().includes(query.toLowerCase())
+        );
+
+        if (query.length === 0 || filtered.length === 0) {
+            zoneSuggestions.classList.add('hidden');
+            return;
+        }
+
+        zoneSuggestions.innerHTML = filtered
+            .map((zone) => `<div class="suggestion-item" data-zone="${escapeHtml(zone)}">${escapeHtml(zone)}</div>`)
+            .join("");
+        zoneSuggestions.classList.remove('hidden');
+    };
+
+    const selectZone = (zone) => {
+        zoneSearchInput.value = zone;
+        zoneValueHidden.value = zone;
+        zoneSuggestions.classList.add('hidden');
+    };
+
+    zoneSearchInput.addEventListener('input', (event) => {
+        zoneValueHidden.value = event.target.value;
+        renderZoneSuggestions(event.target.value);
+    });
+
+    zoneSearchInput.addEventListener('focus', () => {
+        if (zoneSearchInput.value.length > 0) {
+            renderZoneSuggestions(zoneSearchInput.value);
+        }
+    });
+
+    zoneSuggestions.addEventListener('click', (event) => {
+        const suggestion = event.target.closest('.suggestion-item');
+        if (suggestion) {
+            const zone = suggestion.dataset.zone;
+            selectZone(zone);
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        if (
+            !event.target.closest('#zone-search-input') &&
+            !event.target.closest('#zone-suggestions')
+        ) {
+            zoneSuggestions.classList.add('hidden');
+        }
+    });
+
     if (editing) {
         $('#customer-form .form-actions').insertAdjacentHTML('afterbegin', '<button type="button" class="danger-button" id="delete-customer">Elimina</button><button type="button" class="secondary-button" id="copy-customer">Copia</button>');
         $('#delete-customer').addEventListener('click', async () => {
