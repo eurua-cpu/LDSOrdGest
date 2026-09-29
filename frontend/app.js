@@ -224,7 +224,10 @@ function renderMetrics() {
 
 function orderRow(order, compact = false) {
     const actions = `<span class="order-actions"><button class="row-action" data-order-id="${order.id}" title="Apri ordine" aria-label="Apri ordine">👓</button></span>`;
-    return `<tr class="order-table-row" data-id="${order.id}"><td><span class="order-number">${String(order.id).padStart(4, '0')}</span></td><td><span class="table-link">${escapeHtml(order.cliente_nome || customerName(order.cliente_id))}</span></td><td>${escapeHtml(order.cliente_zona || '—')}</td><td>${formatDate(order.data)}</td><td><strong class="order-total-cell">${formatMoney(order.totale_ordine)}</strong></td>${compact ? `<td>${statusBadge(order.stato)}</td><td>${actions}</td>` : `<td><span class="pay ${Number(order.pagato) === 1 ? 'yes' : ''}">${Number(order.pagato) === 1 ? 'Pagato' : Number(order.pagato) === 3 ? 'Parzialmente pagato' : 'Da pagare'}</span></td><td>${statusBadge(order.stato)}</td><td>${actions}</td>`}</tr>`;
+    const righe = order.righe || [];
+    const preview = righe.slice(0, 2).map((r) => `<div class="article-preview"><strong>${escapeHtml(r.articolo_codice)}</strong> × ${Number(r.quantita).toLocaleString('it-IT', { maximumFractionDigits: 2 })}</div>`).join('');
+    const moreCount = righe.length > 2 ? ` <small class="muted-cell">+${righe.length - 2}</small>` : '';
+    return `<tr class="order-table-row" data-id="${order.id}"><td><span class="table-link">${escapeHtml(order.cliente_nome || customerName(order.cliente_id))}</span></td><td>${escapeHtml(order.cliente_zona || '—')}</td><td>${formatDate(order.data)}</td><td><div class="articles-column">${preview}${moreCount}</div></td>${compact ? `<td>${statusBadge(order.stato)}</td><td>${actions}</td>` : `<td><span class="pay ${Number(order.pagato) === 1 ? 'yes' : ''}">${Number(order.pagato) === 1 ? 'Pagato' : Number(order.pagato) === 3 ? 'Parzialmente pagato' : 'Da pagare'}</span></td><td>${statusBadge(order.stato)}</td><td>${actions}</td>`}</tr>`;
 }
 
 function renderOrders() {
@@ -267,10 +270,10 @@ function renderOrders() {
     const payment = paymentFilter.value || 'all';
     const rows = state.orders.filter((order) => (!query || String(order.id).includes(query) || (order.cliente_nome || customerName(order.cliente_id)).toLowerCase().includes(query) || (order.cliente_zona || '').toLowerCase().includes(query)) && (filter === 'all' || String(order.stato) === filter) && (zoneFilter.value === 'all' || order.cliente_zona === zoneFilter.value) && (payment === 'all' || String(order.pagato) === payment));
     if ($('#order-filter') && $('#order-filter').options[1]?.textContent === 'Aperto') $('#order-filter').innerHTML = '<option value="all">Tutti gli stati</option><option value="1">Impegnato</option><option value="4">Parzialmente consegnato</option><option value="2">Consegnato</option><option value="3">Annullato</option>';
-    $('#orders-table').closest('table').querySelector('thead tr').innerHTML = '<th>Numero</th><th>Cliente</th><th>Zona</th><th>Data</th><th>Totale</th><th>Pagamento</th><th>Stato</th><th></th>';
-    $('#recent-orders').closest('table').querySelector('thead tr').innerHTML = '<th>Ordine</th><th>Cliente</th><th>Zona</th><th>Data</th><th>Totale</th><th>Stato</th><th></th>';
-    $('#orders-table').innerHTML = rows.length ? rows.map((order) => orderRow(order)).join('') : '<tr><td colspan="8" class="empty">Nessun ordine trovato.</td></tr>';
-    $('#recent-orders').innerHTML = state.orders.slice(0, 6).map((order) => orderRow(order, true)).join('') || '<tr><td colspan="7" class="empty">Nessun ordine disponibile.</td></tr>';
+    $('#orders-table').closest('table').querySelector('thead tr').innerHTML = '<th>Cliente</th><th>Zona</th><th>Data</th><th>Articoli</th><th>Pagamento</th><th>Stato</th><th></th>';
+    $('#recent-orders').closest('table').querySelector('thead tr').innerHTML = '<th>Cliente</th><th>Zona</th><th>Data</th><th>Articoli</th><th>Stato</th><th></th>';
+    $('#orders-table').innerHTML = rows.length ? rows.map((order) => orderRow(order)).join('') : '<tr><td colspan="7" class="empty">Nessun ordine trovato.</td></tr>';
+    $('#recent-orders').innerHTML = state.orders.slice(0, 6).map((order) => orderRow(order, true)).join('') || '<tr><td colspan="6" class="empty">Nessun ordine disponibile.</td></tr>';
 }
 
 function renderCustomers() {
