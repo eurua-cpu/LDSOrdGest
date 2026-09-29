@@ -705,16 +705,9 @@ function orderForm(existingOrder = null, copying = false) {
             })
             .join("");
 
-    const customerOptions = state.customers
-        .map(
-            (customer) =>
-                `<option value="${customer.id}" ${
-                    Number(customer.id) === selectedCustomerId
-                        ? "selected"
-                        : ""
-                }>${escapeHtml(customer.nome)}</option>`
-        )
-        .join("");
+    const selectedCustomer = state.customers.find(
+        (c) => Number(c.id) === selectedCustomerId
+    );
 
     openDrawer(`
         <p class="eyebrow">
@@ -737,11 +730,22 @@ function orderForm(existingOrder = null, copying = false) {
             <div class="form-grid">
                 <div class="field">
                     <label>Cliente *</label>
-
-                    <select name="cliente_id" required>
-                        <option value="">Seleziona cliente</option>
-                        ${customerOptions}
-                    </select>
+                    <div class="customer-search-wrapper">
+                        <input
+                            type="text"
+                            id="customer-search-input"
+                            placeholder="Digita nome cliente..."
+                            autocomplete="off"
+                            value="${selectedCustomer ? escapeHtml(selectedCustomer.nome) : ""}"
+                        >
+                        <input
+                            type="hidden"
+                            name="cliente_id"
+                            id="customer-id-hidden"
+                            value="${selectedCustomerId || ""}"
+                        >
+                        <div id="customer-suggestions" class="customer-suggestions hidden"></div>
+                    </div>
                 </div>
 
                 <div class="field full">
@@ -860,17 +864,80 @@ function orderForm(existingOrder = null, copying = false) {
         </form>
     `);
 
-    const customerSelect = document.querySelector(
-        '#order-form select[name="cliente_id"]'
+    const customerSearchInput = document.querySelector(
+        '#customer-search-input'
+    );
+    const customerIdHidden = document.querySelector(
+        '#customer-id-hidden'
+    );
+    const customerSuggestions = document.querySelector(
+        '#customer-suggestions'
     );
 
-    /*
-     * Impostazione esplicita del valore.
-     * È importante soprattutto su Safari/iPhone.
-     */
-    if (customerSelect && selectedCustomerId > 0) {
-        customerSelect.value = String(selectedCustomerId);
-    }
+    const renderSuggestions = (query = "") => {
+        const filtered = state.customers.filter((customer) =>
+            customer.nome
+                .toLowerCase()
+                .includes(query.toLowerCase())
+        );
+
+        if (query.length === 0 || filtered.length === 0) {
+            customerSuggestions.classList.add('hidden');
+            return;
+        }
+
+        customerSuggestions.innerHTML = filtered
+            .map(
+                (customer) =>
+                    `<div class="suggestion-item" data-customer-id="${customer.id}">
+                        ${escapeHtml(customer.nome)}
+                        ${customer.localita ? `<small>${escapeHtml(customer.localita)}</small>` : ""}
+                    </div>`
+            )
+            .join("");
+        customerSuggestions.classList.remove('hidden');
+    };
+
+    const selectCustomer = (customerId) => {
+        const customer = state.customers.find(
+            (c) => Number(c.id) === Number(customerId)
+        );
+
+        if (customer) {
+            customerSearchInput.value = customer.nome;
+            customerIdHidden.value = customer.id;
+            customerSuggestions.classList.add('hidden');
+        }
+    };
+
+    customerSearchInput.addEventListener('input', (event) => {
+        renderSuggestions(event.target.value);
+    });
+
+    customerSearchInput.addEventListener('focus', () => {
+        if (customerSearchInput.value.length > 0) {
+            renderSuggestions(customerSearchInput.value);
+        }
+    });
+
+    customerSuggestions.addEventListener('click', (event) => {
+        const suggestion = event.target.closest('.suggestion-item');
+        if (suggestion) {
+            const customerId = Number(
+                suggestion.dataset.customerId
+            );
+            selectCustomer(customerId);
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        if (
+            !event.target.closest('#customer-search-input') &&
+            !event.target.closest('#customer-suggestions')
+        ) {
+            customerSuggestions.classList.add('hidden');
+        }
+    });
 
     const syncLine = (event) => {
         const field = event.target.dataset.lineField;
@@ -967,11 +1034,11 @@ function orderForm(existingOrder = null, copying = false) {
 
         const form = event.currentTarget;
         const raw = Object.fromEntries(new FormData(form));
-        const customerSelect = form.querySelector(
-            'select[name="cliente_id"]'
+        const customerIdInput = form.querySelector(
+            'input[name="cliente_id"]'
         );
 
-        const customerId = Number(customerSelect?.value || 0);
+        const customerId = Number(customerIdInput?.value || 0);
 
         /*
          * Controlliamo sia il valore selezionato sia l'esistenza
