@@ -28,7 +28,7 @@ async function getCustomerById(value) {
 }
 
 async function getAll() {
-    const ordini = db.prepare(`
+    const ordini = await db.prepare(`
         SELECT
             o.*,
             MAX(c.nome) AS cliente_nome,
@@ -45,7 +45,7 @@ async function getAll() {
         ORDER BY o.data DESC, o.id DESC
     `).all();
 
-    const righeByOrdine = db.prepare(`
+    const righeByOrdine = await db.prepare(`
         SELECT
             r.*,
             a.codice AS articolo_codice,
