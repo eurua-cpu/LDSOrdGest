@@ -97,7 +97,7 @@ async function getAll() {
 }
 
 async function getById(id) {
-    const ordini = await db.prepare(`
+    const ordine = await db.prepare(`
         SELECT
             o.*,
             MAX(c.nome) AS cliente_nome,
@@ -152,7 +152,7 @@ async function getById(id) {
         ORDER BY r.id
     `).all(id);
 
-    return ordini;
+    return ordine;
 }
 
 async function create(data) {
