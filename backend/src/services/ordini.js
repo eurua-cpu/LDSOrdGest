@@ -27,6 +27,19 @@ async function getCustomerById(value) {
     return customer;
 }
 
+async function getOrderMovementNote(ordineId, prefix = 'Consegna ordine') {
+    const result = await db.prepare(`
+        SELECT c.nome AS cliente_nome
+        FROM ORDINI o
+        LEFT JOIN CLIENTI c
+            ON c.id = o.cliente_id
+        WHERE o.id = ?
+    `).get(ordineId);
+
+    const clienteText = result?.cliente_nome ? ` - ${result.cliente_nome}` : '';
+    return `${prefix} "${ordineId}"${clienteText}`;
+}
+
 async function getAll() {
     const ordini = await db.prepare(`
         SELECT
@@ -413,22 +426,22 @@ async function update(id, data) {
                         // Cambio articolo sulla riga: il consegnato precedente torna
                         // disponibile sul vecchio articolo, quello nuovo è una consegna fresca.
                         if (previousDelivered > 0) {
-                            await magazzino.resoCliente({ articoloId: existingLine.articolo_id, quantita: previousDelivered, ordineId, note: `Cambio articolo riga ordine "${ordineId}" (ex riga "${existingLine.id}")` });
+                            await magazzino.resoCliente({ articoloId: existingLine.articolo_id, quantita: previousDelivered, ordineId, note: await getOrderMovementNote(ordineId, 'Cambio articolo ordine') });
                         }
                         if (quantitaConsegnata > 0) {
-                            await magazzino.vendita({ articoloId: line.articolo_id, quantita: quantitaConsegnata, ordineId, rigaOrdineId: existingLine.id, note: `Consegna ordine "${ordineId}" riga "${existingLine.id}"` });
+                            await magazzino.vendita({ articoloId: line.articolo_id, quantita: quantitaConsegnata, ordineId, rigaOrdineId: existingLine.id, note: await getOrderMovementNote(ordineId, 'Consegna ordine') });
                         }
                     } else {
                         const deliveryDelta = quantitaConsegnata - previousDelivered;
                         if (deliveryDelta > 0) {
-                            await magazzino.vendita({ articoloId: line.articolo_id, quantita: deliveryDelta, ordineId, rigaOrdineId: existingLine.id, note: `Consegna ordine "${ordineId}" riga "${existingLine.id}"` });
+                            await magazzino.vendita({ articoloId: line.articolo_id, quantita: deliveryDelta, ordineId, rigaOrdineId: existingLine.id, note: await getOrderMovementNote(ordineId, 'Consegna ordine') });
                         } else if (deliveryDelta < 0) {
-                            await magazzino.resoCliente({ articoloId: line.articolo_id, quantita: -deliveryDelta, ordineId, note: `Rettifica consegna ordine "${ordineId}" riga "${existingLine.id}"` });
+                            await magazzino.resoCliente({ articoloId: line.articolo_id, quantita: -deliveryDelta, ordineId, note: await getOrderMovementNote(ordineId, 'Rettifica consegna ordine') });
                         }
                     }
                 } else if (quantitaConsegnata > 0) {
                     // Riga nuova: tutta la quantità consegnata è una consegna fresca.
-                    await magazzino.vendita({ articoloId: line.articolo_id, quantita: quantitaConsegnata, ordineId, note: `Consegna ordine "${ordineId}" nuova riga` });
+                    await magazzino.vendita({ articoloId: line.articolo_id, quantita: quantitaConsegnata, ordineId, note: await getOrderMovementNote(ordineId, 'Consegna ordine') });
                 }
 
                 await insertLine.run(
@@ -446,7 +459,7 @@ async function update(id, data) {
                 if (matchedExistingIds.has(oldLine.id)) continue;
                 const previousDelivered = Number(oldLine.quantita_consegnata || 0);
                 if (previousDelivered > 0) {
-                    await magazzino.resoCliente({ articoloId: oldLine.articolo_id, quantita: previousDelivered, ordineId, note: `Rimozione riga ordine "${ordineId}" (ex riga "${oldLine.id}")` });
+                    await magazzino.resoCliente({ articoloId: oldLine.articolo_id, quantita: previousDelivered, ordineId, note: await getOrderMovementNote(ordineId, 'Rimozione ordine') });
                 }
             }
         }

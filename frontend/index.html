@@ -368,7 +368,12 @@
             <div>
               <p class="eyebrow">REGISTRO OPERAZIONI</p>
               <h2>Movimenti di magazzino</h2>
-            </div><input class="movement-filter" id="movement-filter" placeholder="Filtra articolo o tipo...">
+            </div>
+            <div class="movement-filters">
+              <input class="movement-filter" id="movement-filter" placeholder="Filtra articolo o tipo..." aria-label="Filtra articolo o tipo">
+              <label class="movement-date-filter">Dal<input id="movement-date-from" type="date" aria-label="Data iniziale"></label>
+              <label class="movement-date-filter">Al<input id="movement-date-to" type="date" aria-label="Data finale"></label>
+            </div>
           </div>
           <div class="table-wrap">
             <table>
@@ -379,8 +384,8 @@
                   <th>UM</th>
                   <th>Tipo</th>
                   <th>Quantità</th>
-                  <th>Ordine</th>
-                  <th>Riga</th>
+                  <th>Consegna ordine</th>
+                  <th>Cliente</th>
                   <th>Note</th>
                 </tr>
               </thead>

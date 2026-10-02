@@ -7,13 +7,24 @@ async function getAll() {
             a.codice AS articolo_codice,
             a.descrizione AS articolo_descrizione,
             u.codice AS unita_vendita,
-            u.descrizione AS unita_vendita_descrizione
+            u.descrizione AS unita_vendita_descrizione,
+            c.nome AS cliente_nome
         FROM MOVIMENTI m
         INNER JOIN ARTICOLI a
             ON a.id = m.articolo_id
         LEFT JOIN UM u
             ON u.id = a.um_vendita
-        ORDER BY m.data DESC, m.id DESC
+        LEFT JOIN ORDINI o
+            ON o.id = m.riferimento_ordine_id
+        LEFT JOIN CLIENTI c
+            ON c.id = o.cliente_id
+        ORDER BY
+            CASE
+                WHEN m.data ~ '^[0-9]{2}-[0-9]{2}-[0-9]{4}$'
+                    THEN substring(m.data from 7 for 4) || '-' || substring(m.data from 4 for 2) || '-' || substring(m.data from 1 for 2)
+                ELSE substring(m.data from 1 for 10)
+            END DESC,
+            m.id DESC
     `).all());
 }
 
@@ -24,14 +35,25 @@ async function getByArticolo(articoloId) {
             a.codice AS articolo_codice,
             a.descrizione AS articolo_descrizione,
             u.codice AS unita_vendita,
-            u.descrizione AS unita_vendita_descrizione
+            u.descrizione AS unita_vendita_descrizione,
+            c.nome AS cliente_nome
         FROM MOVIMENTI m
         INNER JOIN ARTICOLI a
             ON a.id = m.articolo_id
         LEFT JOIN UM u
             ON u.id = a.um_vendita
+        LEFT JOIN ORDINI o
+            ON o.id = m.riferimento_ordine_id
+        LEFT JOIN CLIENTI c
+            ON c.id = o.cliente_id
         WHERE m.articolo_id = ?
-        ORDER BY m.data DESC, m.id DESC
+        ORDER BY
+            CASE
+                WHEN m.data ~ '^[0-9]{2}-[0-9]{2}-[0-9]{4}$'
+                    THEN substring(m.data from 7 for 4) || '-' || substring(m.data from 4 for 2) || '-' || substring(m.data from 1 for 2)
+                ELSE substring(m.data from 1 for 10)
+            END DESC,
+            m.id DESC
     `).all(articoloId));
 }
 

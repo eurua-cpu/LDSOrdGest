@@ -300,8 +300,20 @@ function renderWarehouse() {
 
 function renderMovements() {
     const query = ($('#movement-filter')?.value || '').toLowerCase();
-    const movements = (state.warehouse.movements || []).filter((item) => `${item.articolo_codice} ${item.articolo_descrizione || ''} ${item.tipo}`.toLowerCase().includes(query));
-    $('#warehouse-movements').innerHTML = movements.map((item) => `<tr class="movement-table-row"><td>${formatMovementDate(item.data)}</td><td><strong>${escapeHtml(item.articolo_codice)}</strong><small class="muted-cell">${escapeHtml(item.articolo_descrizione || '')}</small></td><td>${escapeHtml(item.unita_vendita_descrizione || item.unita_vendita || '—')}</td><td><span class="movement-type ${String(item.tipo).toLowerCase()}">${escapeHtml(item.tipo)}</span></td><td class="movement-quantity ${Number(item.quantita) < 0 ? 'negative' : 'positive'}">${stockValue(item.quantita)}</td><td>${item.riferimento_ordine_id || item.riferimento_id || '—'}</td><td>${item.riferimento_riga_id || '—'}</td><td>${escapeHtml(item.note || '—')}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">Nessun movimento trovato.</td></tr>';
+    const dateFrom = $('#movement-date-from')?.value || '';
+    const dateTo = $('#movement-date-to')?.value || '';
+    const movements = (state.warehouse.movements || []).filter((item) => {
+        const matchesQuery = `${item.articolo_codice} ${item.articolo_descrizione || ''} ${item.tipo} ${item.cliente_nome || ''}`.toLowerCase().includes(query);
+        const [day, month, year] = formatMovementDate(item.data).split('-');
+        const movementDate = year ? `${year}-${month}-${day}` : '';
+        return matchesQuery && (!dateFrom || movementDate >= dateFrom) && (!dateTo || movementDate <= dateTo);
+    });
+    $('#warehouse-movements').innerHTML = movements.map((item) => {
+        const ordineId = Number(item.riferimento_ordine_id || item.riferimento_id || 0);
+        const consegnaOrdine = ordineId ? `Consegna ordine #${String(ordineId).padStart(4, '0')}` : '—';
+        const clienteNome = item.cliente_nome || '—';
+        return `<tr class="movement-table-row"><td>${formatMovementDate(item.data)}</td><td><strong>${escapeHtml(item.articolo_codice)}</strong><small class="muted-cell">${escapeHtml(item.articolo_descrizione || '')}</small></td><td>${escapeHtml(item.unita_vendita_descrizione || item.unita_vendita || '—')}</td><td><span class="movement-type ${String(item.tipo).toLowerCase()}">${escapeHtml(item.tipo)}</span></td><td class="movement-quantity ${Number(item.quantita) < 0 ? 'negative' : 'positive'}">${stockValue(item.quantita)}</td><td>${escapeHtml(consegnaOrdine)}</td><td>${escapeHtml(clienteNome)}</td><td>${escapeHtml(item.note || '—')}</td></tr>`;
+    }).join('') || '<tr><td colspan="8" class="empty">Nessun movimento trovato.</td></tr>';
 }
 
 document.addEventListener('click', (event) => {
@@ -316,7 +328,7 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('input', (event) => {
-    if (event.target.id === 'movement-filter') renderMovements();
+    if (['movement-filter', 'movement-date-from', 'movement-date-to'].includes(event.target.id)) renderMovements();
 });
 
 function closeMobileMenu() {
@@ -634,15 +646,19 @@ function orderForm(existingOrder = null, copying = false) {
                                     ${unit ? `<em>${unit}</em>` : ""}
                                 </label>
 
-                                <input
-                                    type="number"
-                                    min="0.01"
-                                    step="0.01"
-                                    data-line-field="quantita"
-                                    data-line="${index}"
-                                    value="${line.quantita}"
-                                    required
-                                >
+                                <div class="quantity-stepper">
+                                    <button type="button" data-quantity-step="-1" data-line="${index}" aria-label="Diminuisci quantità">−</button>
+                                    <input
+                                        type="number"
+                                        min="0.01"
+                                        step="0.01"
+                                        data-line-field="quantita"
+                                        data-line="${index}"
+                                        value="${line.quantita}"
+                                        required
+                                    >
+                                    <button type="button" data-quantity-step="1" data-line="${index}" aria-label="Aumenta quantità">+</button>
+                                </div>
 
                                 <small class="line-hint">
                                     Materiale richiesto:
@@ -1066,6 +1082,25 @@ function orderForm(existingOrder = null, copying = false) {
     $("#line-editors").addEventListener("change", syncLine);
 
     $("#line-editors").addEventListener("click", (event) => {
+        const quantityStep = event.target.closest("[data-quantity-step]");
+
+        if (quantityStep) {
+            const index = Number(quantityStep.dataset.line);
+            const quantityInput = document.querySelector(
+                `[data-line-field="quantita"][data-line="${index}"]`
+            );
+
+            if (quantityInput) {
+                const nextValue = Math.max(
+                    0.01,
+                    Number(quantityInput.value || 0) + Number(quantityStep.dataset.quantityStep)
+                );
+                quantityInput.value = nextValue.toFixed(2);
+                quantityInput.dispatchEvent(new Event("input", { bubbles: true }));
+            }
+            return;
+        }
+
         const removeButton = event.target.closest("[data-remove-line]");
 
         if (!removeButton) {

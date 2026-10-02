@@ -394,6 +394,33 @@ function normalizeMovementDate(value) {
     throw new Error('Data movimento non valida: usare DD-MM-AAAA');
 }
 
+async function getClienteNomeByOrdineId(ordineId) {
+    if (!ordineId) {
+        return null;
+    }
+
+    const result = await db.prepare(`
+        SELECT c.nome AS cliente_nome
+        FROM ORDINI o
+        LEFT JOIN CLIENTI c
+            ON c.id = o.cliente_id
+        WHERE o.id = ?
+    `).get(ordineId);
+
+    return result?.cliente_nome || null;
+}
+
+async function buildOrdineMovementNote(ordineId, prefix = 'Consegna ordine') {
+    if (!ordineId) {
+        return null;
+    }
+
+    const clienteNome = await getClienteNomeByOrdineId(ordineId);
+    const clienteText = clienteNome ? ` - ${clienteNome}` : '';
+
+    return `${prefix} "${ordineId}"${clienteText}`;
+}
+
 
 /**
  * ============================================================
@@ -506,6 +533,8 @@ async function vendita({
         );
     }
 
+    const movementNote = note ?? await buildOrdineMovementNote(ordineId, 'Consegna ordine');
+
     return scarico({
         articoloId,
         quantita: qta,
@@ -513,7 +542,7 @@ async function vendita({
         riferimentoId: ordineId,
         riferimentoOrdineId: ordineId,
         riferimentoRigaId: rigaOrdineId,
-        note: note
+        note: movementNote
     });
 }
 
@@ -538,13 +567,15 @@ async function resoCliente({
         );
     }
 
+    const movementNote = note ?? await buildOrdineMovementNote(ordineId, 'Rettifica consegna ordine');
+
     return createMovimento({
         articoloId,
         tipo: 'RESO_CLIENTE',
         quantita: qta,
         riferimentoTipo: 'ORDINE',
         riferimentoId: ordineId,
-        note
+        note: movementNote
     });
 }
 
@@ -593,17 +624,28 @@ async function getMovimenti(
             m.*,
 
             a.codice AS articolo_codice,
-            a.descrizione AS articolo_descrizione
+            a.descrizione AS articolo_descrizione,
+            c.nome AS cliente_nome
 
         FROM MOVIMENTI m
 
         INNER JOIN ARTICOLI a
             ON a.id = m.articolo_id
 
+        LEFT JOIN ORDINI o
+            ON o.id = m.riferimento_ordine_id
+
+        LEFT JOIN CLIENTI c
+            ON c.id = o.cliente_id
+
         WHERE m.articolo_id = ?
 
         ORDER BY
-            m.data DESC,
+            CASE
+                WHEN m.data ~ '^[0-9]{2}-[0-9]{2}-[0-9]{4}$'
+                    THEN substring(m.data from 7 for 4) || '-' || substring(m.data from 4 for 2) || '-' || substring(m.data from 1 for 2)
+                ELSE substring(m.data from 1 for 10)
+            END DESC,
             m.id DESC
     `).all(articoloId);
 }
