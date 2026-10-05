@@ -68,14 +68,18 @@ app.use('/api/materiali', materialiRoutes);
 
 const PORT = process.env.PORT || 8080;
 
-(async () => {
-    try {
-        await migratePlainPasswords(pool);
-    } catch (error) {
-        console.error('Migration failed:', error);
-    }
+// Start the server first so it is reachable even if the database is unavailable
+app.listen(PORT, () => {
+    console.log(`Server avviato su http://localhost:${PORT}`);
 
-    app.listen(PORT, () => {
-        console.log(`Server avviato su http://localhost:${PORT}`);
-    });
-})();
+    // Run the password migration in the background; a failure must not crash the server
+    (async () => {
+        try {
+            await migratePlainPasswords(pool);
+            console.log('✓ Password migration completed at startup');
+        } catch (error) {
+            console.error('⚠️ Password migration failed at startup:', error.message);
+            console.error('Server will continue running. Migration can be retried later.');
+        }
+    })();
+});
