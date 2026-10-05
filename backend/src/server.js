@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { pool } = require('./db');
+const { runSqlMigrations } = require('./migrations/run-sql-migrations');
 const { migratePlainPasswords } = require('./migrations/migrate-plain-passwords');
 
 const {
@@ -74,8 +75,18 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
     console.log(`Server avviato su http://localhost:${PORT}`);
 
-    // Run the password migration in the background; a failure must not crash the server
+    // Run startup migrations in the background; a failure must not crash the server
     (async () => {
+        try {
+            const result = await runSqlMigrations(pool);
+            if (!result.success) {
+                console.error('⚠️ SQL migrations did not complete. Server will continue running.');
+            }
+        } catch (error) {
+            console.error('⚠️ SQL migrations failed at startup:', error.message);
+            console.error('Server will continue running.');
+        }
+
         try {
             await migratePlainPasswords(pool);
             console.log('✓ Password migration completed at startup');
