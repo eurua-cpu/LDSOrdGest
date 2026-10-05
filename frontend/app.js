@@ -329,6 +329,13 @@ document.addEventListener('click', (event) => {
 
 document.addEventListener('input', (event) => {
     if (['movement-filter', 'movement-date-from', 'movement-date-to'].includes(event.target.id)) renderMovements();
+    if (event.target.id === 'notes-editor') {
+        saveNotesEditor();
+    }
+});
+
+document.addEventListener('click', (event) => {
+    if (event.target.closest('#notes-clear')) clearNotesEditor();
 });
 
 function closeMobileMenu() {
@@ -1244,7 +1251,51 @@ async function showOrder(id) { try { const order = await api(`ordini/${id}`); co
 async function loadWarehouse() { const [articles, materials, movements] = await Promise.all([api('magazzino'), api('magazzino/materiali'), api('movimenti')]); state.warehouse = { articles, materials, movements }; renderWarehouse(); renderMovements(); }
 async function loadData() { try { const [orders, customers, products] = await Promise.all([api('ordini'), api('clienti'), api('articoli')]); state.orders = orders; state.customers = customers; state.products = products; state.materials = await api('materiali').catch(() => []); state.units = await api('um').catch(() => []); await loadWarehouse(); renderMetrics(); renderOrders(); renderCustomers(); renderProducts(); } catch (error) { showToast(`Impossibile caricare i dati: ${error.message}`, true); } }
 
-function switchView(view) { document.querySelectorAll('.page').forEach((page) => page.classList.toggle('hidden', page.id !== `${view}-view`)); document.querySelectorAll('.nav-item').forEach((item) => item.classList.toggle('active', item.dataset.view === view)); $('#page-kicker').textContent = { overview: 'Panoramica', orders: 'Ordini', customers: 'Clienti', products: 'Articoli', warehouse: 'Magazzino' }[view]; if (view === 'warehouse') loadWarehouse().catch((error) => showToast(error.message, true)); }
+let notesSaveTimer = null;
+
+async function renderNotesEditor() {
+    const editor = $('#notes-editor');
+    const status = $('#notes-status');
+    if (!editor || !status) return;
+    try {
+        const note = await api('note');
+        editor.value = note.testo || '';
+        status.textContent = note.updated_at
+            ? `Ultimo salvataggio ${new Date(note.updated_at).toLocaleString('it-IT')}`
+            : 'Nessun salvataggio';
+    } catch (error) {
+        status.textContent = 'Errore nel caricamento';
+    }
+}
+
+async function persistNotes(value) {
+    const status = $('#notes-status');
+    try {
+        await api('note', { method: 'PUT', body: JSON.stringify({ testo: value }) });
+        status.textContent = `Salvato alle ${new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`;
+    } catch (error) {
+        status.textContent = 'Errore nel salvataggio';
+    }
+}
+
+function saveNotesEditor() {
+    const editor = $('#notes-editor');
+    const status = $('#notes-status');
+    if (!editor || !status) return;
+    status.textContent = 'Salvataggio...';
+    clearTimeout(notesSaveTimer);
+    notesSaveTimer = setTimeout(() => persistNotes(editor.value), 600);
+}
+
+function clearNotesEditor() {
+    const editor = $('#notes-editor');
+    if (!editor) return;
+    editor.value = '';
+    clearTimeout(notesSaveTimer);
+    persistNotes('');
+}
+
+function switchView(view) { document.querySelectorAll('.page').forEach((page) => page.classList.toggle('hidden', page.id !== `${view}-view`)); document.querySelectorAll('.nav-item').forEach((item) => item.classList.toggle('active', item.dataset.view === view)); $('#page-kicker').textContent = { overview: 'Panoramica', orders: 'Ordini', customers: 'Clienti', products: 'Articoli', warehouse: 'Magazzino', notes: 'Note' }[view]; if (view === 'warehouse') loadWarehouse().catch((error) => showToast(error.message, true)); if (view === 'notes') renderNotesEditor(); }
 
 document.addEventListener('click', (event) => { const nav = event.target.closest('[data-view]'); if (nav) switchView(nav.dataset.view); const target = event.target.closest('[data-view-target]'); if (target) switchView(target.dataset.viewTarget); if (event.target.closest('[data-action="new-order"]')) orderForm(); if (event.target.closest('[data-action="new-customer"]')) customerForm(); if (event.target.closest('[data-action="new-product"]')) productForm(); if (event.target.closest('[data-action="new-material"]')) materialForm(); if (event.target.closest('[data-action="new-movement"]')) movementForm(); const orderButton = event.target.closest('[data-order-id]'); if (orderButton) showOrder(orderButton.dataset.orderId); const customerButton = event.target.closest('[data-customer-id]'); if (customerButton) customerForm(state.customers.find((item) => item.id === Number(customerButton.dataset.customerId))); const productButton = event.target.closest('[data-product-id]'); if (productButton) productForm(state.products.find((item) => item.id === Number(productButton.dataset.productId))); });
 $('#drawer-close').addEventListener('click', closeDrawer); $('#drawer-backdrop').addEventListener('click', (event) => { if (event.target.id === 'drawer-backdrop') closeDrawer(); }); $('#refresh-button').addEventListener('click', loadData); $('#warehouse-refresh').addEventListener('click', () => loadWarehouse().catch((error) => showToast(error.message, true))); $('#order-search').addEventListener('input', renderOrders); $('#order-filter').addEventListener('change', renderOrders); $('#customer-search').addEventListener('input', renderCustomers); $('#product-search').addEventListener('input', renderProducts); $('#today').textContent = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' }); loadData();

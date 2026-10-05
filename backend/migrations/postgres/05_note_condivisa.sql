@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS note_condivisa (
+    id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    testo TEXT NOT NULL DEFAULT '',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO note_condivisa (id, testo)
+VALUES (1, '')
+ON CONFLICT (id) DO NOTHING;

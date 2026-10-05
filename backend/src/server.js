@@ -14,6 +14,7 @@ const ordiniRoutes = require('./routes/ordini');
 const movimentiRoutes = require('./routes/movimenti');
 const magazzinoRoutes = require('./routes/magazzino');
 const materialiRoutes = require('./routes/materiali');
+const noteRoutes = require('./routes/note');
 
 
 const app = express();
@@ -64,6 +65,7 @@ app.use('/api/ordini', ordiniRoutes);
 app.use('/api/movimenti', movimentiRoutes);
 app.use('/api/magazzino', magazzinoRoutes);
 app.use('/api/materiali', materialiRoutes);
+app.use('/api/note', noteRoutes);
 
 
 const PORT = process.env.PORT || 8080;

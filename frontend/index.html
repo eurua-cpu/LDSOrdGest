@@ -91,6 +91,7 @@
         <button class="nav-item" data-view="customers"><span class="nav-icon"><img width="20" height="20" src="https://img.icons8.com/ios/50/groups.png" alt="groups"/></span>Clienti</button>
         <button class="nav-item" data-view="products"><span class="nav-icon"><img width="20" height="20" src="https://img.icons8.com/external-others-pike-picture/50/external-Wooden-Insulation-insulation-others-pike-picture-2.png" alt="external-Wooden-Insulation-insulation-others-pike-picture-2"/></span>Articoli</button>
         <button class="nav-item" data-view="warehouse"><span class="nav-icon"><img width="20" height="20" src="https://img.icons8.com/dotty/80/warehouse.png" alt="Lumber Icon"/></span>Magazzino</button>
+        <button class="nav-item" data-view="notes"><span class="nav-icon"><img width="20" height="20" src="https://img.icons8.com/ios-filled/50/clipboard.png" alt="clipboard"/></span>Note</button>
       </nav>
       <div class="sidebar-footer"><span class="status-dot"></span><span>Postgres DB</span><small>Railway ·
           online</small></div>
@@ -300,6 +301,23 @@
               </thead>
               <tbody id="products-table"></tbody>
             </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="page hidden" id="notes-view">
+        <div class="page-heading compact">
+          <div>
+            <p class="eyebrow">APPUNTI</p>
+            <h1>Note</h1>
+            <p class="subheading">Annotazioni rapide e promemoria operativi.</p>
+          </div>
+          <div class="page-heading-actions"><button class="secondary-button" type="button" id="notes-clear">Pulisci</button></div>
+        </div>
+        <section class="panel">
+          <div class="warehouse-note-editor-wrap">
+            <textarea id="notes-editor" class="warehouse-note-editor" placeholder="Scrivi qui appunti, istruzioni, ordini particolari o note di magazzino..."></textarea>
+            <div class="warehouse-note-status" id="notes-status">Nessun salvataggio</div>
           </div>
         </section>
       </section>

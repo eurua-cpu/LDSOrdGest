@@ -634,6 +634,44 @@
     border-bottom-color: var(--teal)
 }
 
+.warehouse-note-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px
+}
+
+.warehouse-note-editor-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px
+}
+
+.warehouse-note-editor {
+    width: 100%;
+    min-height: 440px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fbfdfc;
+    color: var(--ink);
+    padding: 18px 16px;
+    font: inherit;
+    line-height: 1.6;
+    resize: vertical
+}
+
+.warehouse-note-editor:focus {
+    outline: 0;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(27, 155, 138, .14)
+}
+
+.warehouse-note-status {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em
+}
+
 .movement-filter {
     width: 230px;
     min-width: 0;
